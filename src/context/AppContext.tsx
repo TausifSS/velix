@@ -80,6 +80,16 @@ interface AppContextType {
   sendMessageToMechanic: (mechanicName: string, text: string) => void;
   isSOSModalActive: boolean;
   setSOSModalActive: (active: boolean) => void;
+  
+  // Role-Based extensions
+  currentUserRole: 'user' | 'mechanic' | 'admin';
+  setCurrentUserRole: (role: 'user' | 'mechanic' | 'admin') => void;
+  mechanicFleet: any[];
+  userReports: any[];
+  submitMechanicKyc: (details: any) => void;
+  verifyMechanicPartner: (id: string, status: 'approved' | 'rejected') => void;
+  toggleMechanicOnline: (id: string) => void;
+  addReport: (bookingId: string, issue: string) => void;
 }
 
 const AppContext = createContext<AppContextType | undefined>(undefined);
@@ -196,6 +206,19 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
 
   // 6. SOS Modal State
   const [isSOSModalActive, setSOSModalActive] = useState<boolean>(false);
+
+  // 7. Role-Based States
+  const [currentUserRole, setCurrentUserRole] = useState<'user' | 'mechanic' | 'admin'>('user');
+  const [mechanicFleet, setMechanicFleet] = useState<any[]>([
+    { id: '1', name: 'A1 Car Care', rating: 4.8, reviews: 320, distance: '2.4 km', eta: '6 mins', visitCharge: '₹199', verified: true, services: ['Breakdown', 'Battery'], status: 'approved', kyc: { aadhaar: '3211 4556 9901', pan: 'BCKDP9921D', videoUrl: 'mock_video_1.mp4' }, phone: '+91 98765 43201', online: true },
+    { id: '2', name: 'Speedy Rescue', rating: 4.7, reviews: 210, distance: '3.1 km', eta: '8 mins', visitCharge: '₹199', verified: true, services: ['Towing', 'Breakdown'], status: 'approved', kyc: { aadhaar: '8812 4433 9921', pan: 'AALPK4431Z', videoUrl: 'mock_video_2.mp4' }, phone: '+91 98765 43202', online: true },
+    { id: '3', name: 'QuickFix Auto', rating: 4.6, reviews: 150, distance: '4.0 km', eta: '10 mins', visitCharge: '₹149', verified: false, services: ['Battery', 'Tyre'], status: 'pending', kyc: { aadhaar: '5561 2299 8812', pan: 'BZZPK9911X', videoUrl: 'mock_video_3.mp4' }, phone: '+91 98765 43203', online: false },
+    { id: '4', name: 'Auto Heroes', rating: 4.9, reviews: 412, distance: '1.2 km', eta: '4 mins', visitCharge: '₹249', verified: true, services: ['Breakdown', 'Towing', 'Fuel'], status: 'approved', kyc: { aadhaar: '9921 4411 2233', pan: 'CKKDP1209Y', videoUrl: 'mock_video_4.mp4' }, phone: '+91 98765 43204', online: true }
+  ]);
+  const [userReports, setUserReports] = useState<any[]>([
+    { id: 'R1', userName: 'Tausif Khan', bookingId: '#VLX123456', mechanicName: 'A1 Car Care', issue: 'Visit fee charged twice', status: 'pending', date: '14 May, 2026' },
+    { id: 'R2', userName: 'Rajesh Kumar', bookingId: '#VLX123459', mechanicName: 'Auto Heroes', issue: 'Mechanic did not show up', status: 'resolved', date: '11 May, 2026' }
+  ]);
 
   // Simulation effect for active booking
   useEffect(() => {
@@ -439,6 +462,72 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     }, 3000);
   };
 
+  const submitMechanicKyc = (details: any) => {
+    setMechanicFleet((prev) => {
+      const exists = prev.some((m) => m.id === details.id || m.phone === details.phone);
+      if (exists) {
+        return prev.map((m) =>
+          m.id === details.id || m.phone === details.phone
+            ? { ...m, ...details, status: 'pending', verified: false }
+            : m
+        );
+      } else {
+        const newMech = {
+          id: details.id || `M${Date.now()}`,
+          name: details.name || 'New Garage Partner',
+          rating: 5.0,
+          reviews: 0,
+          distance: '1.5 km',
+          eta: '5 mins',
+          visitCharge: '₹149',
+          verified: false,
+          services: details.services || ['Breakdown'],
+          status: 'pending',
+          kyc: {
+            aadhaar: details.aadhaar || '',
+            pan: details.pan || '',
+            videoUrl: details.videoUrl || 'simulated_video.mp4',
+          },
+          phone: details.phone || '',
+          online: false,
+        };
+        return [...prev, newMech];
+      }
+    });
+  };
+
+  const verifyMechanicPartner = (id: string, status: 'approved' | 'rejected') => {
+    setMechanicFleet((prev) =>
+      prev.map((m) =>
+        m.id === id
+          ? { ...m, status, verified: status === 'approved' }
+          : m
+      )
+    );
+  };
+
+  const toggleMechanicOnline = (id: string) => {
+    setMechanicFleet((prev) =>
+      prev.map((m) =>
+        m.id === id ? { ...m, online: !m.online } : m
+      )
+    );
+  };
+
+  const addReport = (bookingId: string, issue: string) => {
+    const booking = bookings.find((b) => b.id === bookingId) || currentBooking;
+    const newReport = {
+      id: `R${Date.now()}`,
+      userName: user.name,
+      bookingId: bookingId,
+      mechanicName: booking ? booking.mechanicName : 'Unknown Mechanic',
+      issue,
+      status: 'pending',
+      date: new Date().toLocaleDateString([], { day: 'numeric', month: 'short', year: 'numeric' }),
+    };
+    setUserReports((prev) => [newReport, ...prev]);
+  };
+
   return (
     <AppContext.Provider
       value={{
@@ -463,6 +552,14 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
         sendMessageToMechanic,
         isSOSModalActive,
         setSOSModalActive,
+        currentUserRole,
+        setCurrentUserRole,
+        mechanicFleet,
+        userReports,
+        submitMechanicKyc,
+        verifyMechanicPartner,
+        toggleMechanicOnline,
+        addReport,
       }}
     >
       {children}

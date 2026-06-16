@@ -17,11 +17,13 @@ import LiveMap from './pages/LiveMap';
 import Offers from './pages/Offers';
 import Settings from './pages/Settings';
 import MobileApp from './pages/MobileApp';
+import { MechanicConsole } from './pages/MechanicConsole';
+import { AdminPortal } from './pages/AdminPortal';
 import { AlertTriangle } from 'lucide-react';
 
 const AppLayout = () => {
   const location = useLocation();
-  const { isSOSModalActive, setSOSModalActive, user } = useApp();
+  const { isSOSModalActive, setSOSModalActive, user, currentUserRole } = useApp();
   const [isMobile, setIsMobile] = useState(window.innerWidth < 768);
 
   // Responsive layout listener
@@ -49,7 +51,11 @@ const AppLayout = () => {
       {/* Scrollable Main Desktop Panel */}
       <main className="flex-1 overflow-y-auto custom-scrollbar w-full relative">
         <Routes>
-          <Route path="/" element={<Dashboard />} />
+          <Route path="/" element={
+            currentUserRole === 'user' ? <Dashboard /> :
+            currentUserRole === 'mechanic' ? <MechanicConsole /> :
+            <AdminPortal />
+          } />
           <Route path="/login" element={<Login />} />
           <Route path="/bookings" element={<MyBooking />} />
           <Route path="/services" element={<Services />} />

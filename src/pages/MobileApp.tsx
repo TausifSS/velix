@@ -18,7 +18,9 @@ export const MobileApp: React.FC = () => {
     user, vehicles, bookings, currentBooking,
     addVehicle, setDefaultVehicle, deleteVehicle, requestMechanic, 
     cancelBooking, completeBooking, addMoneyToWallet, upgradeToVelixPlus,
-    addEmergencyContact, removeEmergencyContact
+    addEmergencyContact, removeEmergencyContact,
+    mechanicFleet, verifyMechanicPartner,
+    submitMechanicKyc, toggleMechanicOnline
   } = useApp();
 
   // Screen State
@@ -50,6 +52,29 @@ export const MobileApp: React.FC = () => {
   const [ratingVal, setRatingVal] = useState<number>(5);
   const [mapSelectedMech, setMapSelectedMech] = useState<any>(null);
   const [bookingFilter, setBookingFilter] = useState<string>('completed');
+
+  // Mechanic KYC input states
+  const [kycName, setKycName] = useState<string>('National Auto Garage');
+  const [kycPhone, setKycPhone] = useState<string>('+91 98222 33344');
+  const [kycServices, setKycServices] = useState<string[]>(['Breakdown', 'Battery']);
+  const [kycAadhaar, setKycAadhaar] = useState<string>('5544 3322 1100');
+  const [kycPan, setKycPan] = useState<string>('APXDK9921C');
+  const [videoScanStatus, setVideoScanStatus] = useState<'idle' | 'recording' | 'finished'>('idle');
+  const [mechJobState, setMechJobState] = useState<'idle' | 'alert' | 'transit' | 'otp' | 'completed'>('idle');
+  const [mechOtpInput, setMechOtpInput] = useState<string>('');
+  const [mechOtpError, setMechOtpError] = useState<string>('');
+
+  const myMechanic = mechanicFleet.find(m => m.id === 'my-mobile-mech') || { status: 'none', online: false };
+
+  // Simulate distress call alert on a timer when going online
+  useEffect(() => {
+    if (myMechanic.online && mechJobState === 'idle') {
+      const timer = setTimeout(() => {
+        setMechJobState('alert');
+      }, 3500);
+      return () => clearTimeout(timer);
+    }
+  }, [myMechanic.online, mechJobState]);
 
   // Auto transition splash screen to onboarding
   useEffect(() => {
@@ -321,6 +346,16 @@ export const MobileApp: React.FC = () => {
                       <p className="text-gray-500 text-xs mt-1 font-medium">Never Stranded Again.</p>
                     </div>
 
+                    {/* Mechanic link banner */}
+                    <div className="bg-gradient-to-r from-indigo-900 to-indigo-800 p-3.5 rounded-2xl text-white flex justify-between items-center cursor-pointer hover:from-indigo-850 hover:to-indigo-750 transition duration-200"
+                         onClick={() => { setScreen('mechanic_kyc_step1'); }}>
+                      <div className="text-left">
+                        <p className="text-[9px] text-indigo-300 font-bold uppercase tracking-wider">Business Partner</p>
+                        <p className="text-xs font-black leading-tight mt-0.5">Are you a mechanic? Start business here</p>
+                      </div>
+                      <ChevronRight className="w-4 h-4 text-indigo-300" />
+                    </div>
+
                     {/* Cropped mockup illustration */}
                     <div className="py-2 flex justify-center">
                       <img src={loginIllustration} className="h-32 object-contain" alt="Man standing with yellow car" />
@@ -425,6 +460,532 @@ export const MobileApp: React.FC = () => {
               <div className="text-center text-[10px] text-gray-400 font-bold px-4 leading-relaxed shrink-0">
                 By continuing, you agree to our <span className="underline cursor-pointer hover:text-gray-600">Terms & Conditions</span> and <span className="underline cursor-pointer hover:text-gray-600">Privacy Policy</span>.
               </div>
+            </div>
+          )}
+
+          {/* SCREEN: Mechanic Onboarding - Step 1: Business Profile */}
+          {screen === 'mechanic_kyc_step1' && (
+            <div className="flex-1 bg-white p-5 flex flex-col justify-between">
+              <div>
+                <div className="flex items-center gap-3 mb-6">
+                  <button onClick={() => setScreen('auth')} className="p-1 hover:bg-gray-100 rounded-full"><ArrowLeft className="w-5 h-5 text-gray-700" /></button>
+                  <div>
+                    <h2 className="text-sm font-black text-[#0D1117]">Register as Partner</h2>
+                    <p className="text-[9px] text-gray-400 font-bold uppercase mt-0.5">Step 1 of 3: Profile Setup</p>
+                  </div>
+                </div>
+
+                <div className="space-y-4 text-xs">
+                  <div>
+                    <label className="text-[10px] text-gray-500 font-bold uppercase tracking-wider block mb-1">Garage / Business Name</label>
+                    <input 
+                      type="text" 
+                      value={kycName} 
+                      onChange={(e) => setKycName(e.target.value)} 
+                      placeholder="e.g. National Auto Garage" 
+                      className="w-full p-3 bg-gray-50 border border-gray-200 rounded-xl focus:outline-none focus:border-[#FFB800] font-semibold"
+                    />
+                  </div>
+
+                  <div>
+                    <label className="text-[10px] text-gray-500 font-bold uppercase tracking-wider block mb-1">Business Mobile Number</label>
+                    <input 
+                      type="tel" 
+                      value={kycPhone} 
+                      onChange={(e) => setKycPhone(e.target.value)} 
+                      placeholder="e.g. +91 98765 43210" 
+                      className="w-full p-3 bg-gray-50 border border-gray-200 rounded-xl focus:outline-none focus:border-[#FFB800] font-semibold"
+                    />
+                  </div>
+
+                  <div>
+                    <label className="text-[10px] text-gray-500 font-bold uppercase tracking-wider block mb-2">Services You Offer</label>
+                    <div className="space-y-2">
+                      {[
+                        { id: 'Breakdown', label: 'Mechanical Breakdown Support' },
+                        { id: 'Battery', label: 'Battery Jumpstarts & Swaps' },
+                        { id: 'Towing', label: 'Towing Rescue Rig' },
+                        { id: 'Fuel', label: 'Emergency Fuel Supply' },
+                        { id: 'Tyre', label: 'Flat Tyre Repairs' }
+                      ].map(srv => {
+                        const isChecked = kycServices.includes(srv.id);
+                        return (
+                          <div 
+                            key={srv.id}
+                            onClick={() => {
+                              if (isChecked) {
+                                setKycServices(kycServices.filter(s => s !== srv.id));
+                              } else {
+                                setKycServices([...kycServices, srv.id]);
+                              }
+                            }}
+                            className={`p-3 rounded-xl border flex items-center justify-between cursor-pointer transition select-none ${
+                              isChecked ? 'bg-indigo-50 border-indigo-200 text-indigo-900 font-bold' : 'bg-gray-50 border-gray-200 text-gray-650'
+                            }`}
+                          >
+                            <span className="text-[11px]">{srv.label}</span>
+                            <div className={`w-4 h-4 rounded border flex items-center justify-center ${
+                              isChecked ? 'bg-indigo-600 border-indigo-500 text-white' : 'border-gray-400'
+                            }`}>
+                              {isChecked && <span className="text-[10px] font-bold">✓</span>}
+                            </div>
+                          </div>
+                        );
+                      })}
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              <button
+                onClick={() => setScreen('mechanic_kyc_step2')}
+                disabled={!kycName.trim() || !kycPhone.trim() || kycServices.length === 0}
+                className="w-full bg-[#0D1117] text-white py-4 rounded-xl font-bold text-sm hover:bg-gray-800 transition shadow-md mt-6 disabled:bg-gray-100 disabled:text-gray-400"
+              >
+                Next: Document Verification
+              </button>
+            </div>
+          )}
+
+          {/* SCREEN: Mechanic Onboarding - Step 2: Documents Upload */}
+          {screen === 'mechanic_kyc_step2' && (
+            <div className="flex-1 bg-white p-5 flex flex-col justify-between">
+              <div>
+                <div className="flex items-center gap-3 mb-6">
+                  <button onClick={() => setScreen('mechanic_kyc_step1')} className="p-1 hover:bg-gray-100 rounded-full"><ArrowLeft className="w-5 h-5 text-gray-700" /></button>
+                  <div>
+                    <h2 className="text-sm font-black text-[#0D1117]">Register as Partner</h2>
+                    <p className="text-[9px] text-gray-400 font-bold uppercase mt-0.5">Step 2 of 3: Upload Documents</p>
+                  </div>
+                </div>
+
+                <div className="space-y-5 text-xs">
+                  <div className="bg-indigo-50/55 p-3.5 rounded-xl border border-indigo-100 text-[10px] text-indigo-950 font-semibold leading-relaxed">
+                    🛡️ Velix compliance requires legal documents to activate business payouts. Government identities are parsed securely.
+                  </div>
+
+                  <div>
+                    <label className="text-[10px] text-gray-500 font-bold uppercase tracking-wider block mb-1">Aadhaar Card Number</label>
+                    <input 
+                      type="text" 
+                      value={kycAadhaar} 
+                      onChange={(e) => setKycAadhaar(e.target.value)} 
+                      placeholder="e.g. 5544 3322 1100" 
+                      className="w-full p-3 bg-gray-50 border border-gray-200 rounded-xl focus:outline-none focus:border-[#FFB800] font-semibold"
+                    />
+                  </div>
+
+                  <div>
+                    <label className="text-[10px] text-gray-500 font-bold uppercase tracking-wider block mb-1">PAN Card Number</label>
+                    <input 
+                      type="text" 
+                      value={kycPan} 
+                      onChange={(e) => setKycPan(e.target.value.toUpperCase())} 
+                      placeholder="e.g. APXDK9921C" 
+                      className="w-full p-3 bg-gray-50 border border-gray-200 rounded-xl focus:outline-none focus:border-[#FFB800] font-semibold uppercase font-mono"
+                    />
+                  </div>
+
+                  <div className="p-4 rounded-xl border border-dashed border-gray-200 bg-gray-50/30 text-center space-y-1">
+                    <p className="text-[11px] font-bold text-gray-700">Scan Documents Photo</p>
+                    <p className="text-[9px] text-gray-400">PDF, PNG, JPG accepted (max 4MB)</p>
+                    <div className="text-xs text-indigo-600 font-bold underline cursor-pointer mt-1">Simulated Upload Complete ✓</div>
+                  </div>
+                </div>
+              </div>
+
+              <button
+                onClick={() => setScreen('mechanic_kyc_step3')}
+                disabled={kycAadhaar.replace(/\s/g, '').length !== 12 || kycPan.length !== 10}
+                className="w-full bg-[#0D1117] text-white py-4 rounded-xl font-bold text-xs hover:bg-gray-800 transition shadow-md mt-6 disabled:bg-gray-100 disabled:text-gray-400"
+              >
+                Next: Face Liveness Verification
+              </button>
+            </div>
+          )}
+
+          {/* SCREEN: Mechanic Onboarding - Step 3: Video KYC Liveness */}
+          {screen === 'mechanic_kyc_step3' && (
+            <div className="flex-1 bg-white p-5 flex flex-col justify-between">
+              <div>
+                <div className="flex items-center gap-3 mb-6">
+                  <button onClick={() => setScreen('mechanic_kyc_step2')} className="p-1 hover:bg-gray-100 rounded-full"><ArrowLeft className="w-5 h-5 text-gray-700" /></button>
+                  <div>
+                    <h2 className="text-sm font-black text-[#0D1117]">Video KYC check</h2>
+                    <p className="text-[9px] text-gray-400 font-bold uppercase mt-0.5">Step 3 of 3: Video Face Liveness</p>
+                  </div>
+                </div>
+
+                <div className="space-y-4">
+                  <div className="text-xs text-gray-500 font-semibold text-center">
+                    Please position your face within the frame and click Record. Speak clearly.
+                  </div>
+
+                  {/* Camera Simulator */}
+                  <div className="aspect-[4/3] rounded-2xl bg-slate-950 border border-slate-800 relative overflow-hidden flex items-center justify-center">
+                    {videoScanStatus === 'idle' && (
+                      <div className="text-center p-4">
+                        <div className="w-10 h-10 rounded-full bg-indigo-500/10 text-indigo-400 flex items-center justify-center mx-auto mb-2">
+                          <span className="text-lg">📷</span>
+                        </div>
+                        <button 
+                          onClick={() => {
+                            setVideoScanStatus('recording');
+                            setTimeout(() => {
+                              setVideoScanStatus('finished');
+                            }, 3000);
+                          }}
+                          className="px-4 py-1.5 bg-indigo-600 hover:bg-indigo-500 text-white rounded-lg text-[10px] font-bold transition"
+                        >
+                          Start Liveness Scan
+                        </button>
+                      </div>
+                    )}
+
+                    {videoScanStatus === 'recording' && (
+                      <div className="absolute inset-0 flex flex-col justify-between p-4">
+                        <div className="flex justify-between items-start z-10">
+                          <span className="px-2 py-0.5 rounded bg-red-600 text-white text-[9px] font-bold tracking-wider animate-pulse">
+                            RECORDING
+                          </span>
+                        </div>
+                        <div className="absolute inset-x-0 h-0.5 bg-indigo-400 top-0 animate-bounce shadow-md" />
+                        <div className="w-24 h-24 border border-dashed border-indigo-400/40 rounded-full mx-auto self-center animate-pulse" />
+                        <div className="text-center z-10 bg-slate-950/80 p-2 rounded-lg">
+                          <p className="text-[9px] text-slate-300 font-semibold font-mono">Verify biometrics liveness match...</p>
+                        </div>
+                      </div>
+                    )}
+
+                    {videoScanStatus === 'finished' && (
+                      <div className="absolute inset-0 bg-green-950/20 flex flex-col items-center justify-center p-4 text-center space-y-2">
+                        <span className="text-2xl text-emerald-500">✓</span>
+                        <h4 className="text-xs font-bold text-emerald-600">Video Checklist Captured</h4>
+                        <p className="text-[10px] text-slate-500">Ready to file and submit for Admin compliance verify.</p>
+                      </div>
+                    )}
+                  </div>
+
+                  <div className="bg-slate-50 p-3 rounded-xl border border-slate-100 text-[10px] text-slate-500 font-semibold leading-relaxed">
+                    🗣️ Speak aloud: "I, {kycName}, verify my request to partner with Velix Roadside Assistance network today."
+                  </div>
+                </div>
+              </div>
+
+              <button
+                onClick={() => {
+                  submitMechanicKyc({
+                    id: 'my-mobile-mech',
+                    name: kycName,
+                    phone: kycPhone,
+                    services: kycServices,
+                    aadhaar: kycAadhaar,
+                    pan: kycPan,
+                    videoUrl: 'my_kyc_video.mp4'
+                  });
+                  setScreen('mechanic_pending');
+                }}
+                disabled={videoScanStatus !== 'finished'}
+                className="w-full bg-[#FFB800] text-[#0D1117] py-4 rounded-xl font-bold text-xs hover:bg-yellow-400 transition shadow-md mt-6 disabled:bg-gray-100 disabled:text-gray-400"
+              >
+                Submit KYC Application
+              </button>
+            </div>
+          )}
+
+          {/* SCREEN: Mechanic Onboarding - Pending Status */}
+          {screen === 'mechanic_pending' && (
+            <div className="flex-1 bg-white p-5 flex flex-col justify-between">
+              <div>
+                <div className="flex items-center gap-3 mb-6">
+                  <button onClick={() => setScreen('auth')} className="p-1 hover:bg-gray-100 rounded-full"><ArrowLeft className="w-5 h-5 text-gray-700" /></button>
+                  <div>
+                    <h2 className="text-sm font-black text-[#0D1117]">Onboarding Status</h2>
+                    <p className="text-[9px] text-gray-400 font-bold uppercase mt-0.5">Verification Underway</p>
+                  </div>
+                </div>
+
+                <div className="text-center py-6 space-y-4">
+                  <div className="w-16 h-16 bg-amber-50 rounded-full flex items-center justify-center mx-auto border border-amber-100">
+                    <span className="text-2xl animate-pulse">⏳</span>
+                  </div>
+                  <div>
+                    <h3 className="text-white font-extrabold text-sm bg-slate-900 px-3 py-1.5 rounded-full inline-block">
+                      Status: {myMechanic.status.toUpperCase()}
+                    </h3>
+                    <p className="text-xs text-gray-550 mt-2 leading-relaxed px-4">
+                      Velix compliance officers are matching your Aadhaar, PAN card, and Video KYC declaration biometrics.
+                    </p>
+                  </div>
+                </div>
+
+                {/* Document Checklist */}
+                <div className="bg-gray-50 p-4 rounded-2xl border border-gray-150 space-y-3">
+                  <h4 className="text-[10px] text-gray-400 font-bold uppercase tracking-wider">Document Checklist</h4>
+                  <div className="flex items-center justify-between text-xs font-semibold">
+                    <span className="text-gray-700">Aadhaar & PAN Match</span>
+                    <span className={myMechanic.status === 'approved' ? "text-emerald-600 font-bold" : "text-amber-600 font-bold animate-pulse"}>
+                      {myMechanic.status === 'approved' ? "Verified ✓" : "Pending Verify"}
+                    </span>
+                  </div>
+                  <div className="flex items-center justify-between text-xs font-semibold">
+                    <span className="text-gray-700">Video Liveness Check</span>
+                    <span className={myMechanic.status === 'approved' ? "text-emerald-600 font-bold" : "text-amber-600 font-bold animate-pulse"}>
+                      {myMechanic.status === 'approved' ? "Verified ✓" : "Pending Verify"}
+                    </span>
+                  </div>
+                  <div className="flex items-center justify-between text-xs font-semibold">
+                    <span className="text-gray-700">Verified Partner Badge</span>
+                    <span className={myMechanic.status === 'approved' ? "text-emerald-600 font-bold" : "text-gray-400 font-bold"}>
+                      {myMechanic.status === 'approved' ? "Issued ✓" : "Locked"}
+                    </span>
+                  </div>
+                </div>
+              </div>
+
+              <div className="space-y-2.5">
+                <button
+                  onClick={() => {
+                    if (myMechanic.status === 'approved') {
+                      setScreen('mechanic_dashboard');
+                    } else {
+                      alert("Application is still pending. Switch to PC Admin View to approve it, or use the Debug Bypass below.");
+                    }
+                  }}
+                  className={`w-full py-4 rounded-xl font-bold text-xs transition shadow-md ${
+                    myMechanic.status === 'approved' 
+                      ? 'bg-emerald-600 text-white hover:bg-emerald-500 shadow-emerald-500/10' 
+                      : 'bg-gray-900 text-white hover:bg-gray-800'
+                  }`}
+                >
+                  {myMechanic.status === 'approved' ? "Proceed to Business Dashboard" : "Refresh Status"}
+                </button>
+
+                {myMechanic.status !== 'approved' && (
+                  <button
+                    onClick={() => {
+                      verifyMechanicPartner('my-mobile-mech', 'approved');
+                      alert("Debug Bypass Triggered: Onboarding approved instantly!");
+                    }}
+                    className="w-full py-2 bg-indigo-50 text-indigo-700 border border-indigo-100 hover:bg-indigo-100 text-[10px] font-bold rounded-xl transition"
+                  >
+                    (Debug Bypass: Approve Instantly)
+                  </button>
+                )}
+              </div>
+            </div>
+          )}
+
+          {/* SCREEN: Mechanic Mobile Dashboard */}
+          {screen === 'mechanic_dashboard' && (
+            <div className="flex-1 bg-[#F5F6F8] flex flex-col justify-between p-4">
+              
+              {/* Header */}
+              <div className="bg-white p-3.5 rounded-2xl border border-gray-150 flex justify-between items-center shadow-sm">
+                <div className="text-left">
+                  <span className="text-[8px] font-bold text-gray-400 uppercase tracking-wider">VELIX PARTNER</span>
+                  <h3 className="text-xs font-black text-[#0D1117] mt-0.5">{kycName}</h3>
+                </div>
+
+                <div className="flex items-center gap-2">
+                  <span className={`text-[10px] font-bold ${myMechanic.online ? 'text-emerald-600' : 'text-gray-400'}`}>
+                    {myMechanic.online ? 'Online' : 'Offline'}
+                  </span>
+                  <button 
+                    onClick={() => toggleMechanicOnline('my-mobile-mech')}
+                    className={`w-10 h-6 rounded-full p-0.5 transition-colors ${myMechanic.online ? 'bg-emerald-500' : 'bg-gray-300'}`}
+                  >
+                    <div className={`w-5 h-5 bg-white rounded-full transition-transform ${myMechanic.online ? 'translate-x-4' : 'translate-x-0'}`} />
+                  </button>
+                </div>
+              </div>
+
+              {/* Dashboard body depending on job state */}
+              <div className="flex-1 my-4 flex flex-col justify-center">
+                
+                {mechJobState === 'idle' && (
+                  <div className="text-center space-y-4 py-10 bg-white rounded-3xl border border-gray-150 shadow-sm">
+                    <div className="w-16 h-16 bg-slate-50 border border-gray-100 rounded-full flex items-center justify-center mx-auto">
+                      <span className="text-2xl animate-pulse">📡</span>
+                    </div>
+                    <div>
+                      <h4 className="text-sm font-black text-[#0D1117]">
+                        {myMechanic.online ? "Listening for Distress Signals" : "You are Offline"}
+                      </h4>
+                      <p className="text-xs text-gray-405 mt-1 px-8">
+                        {myMechanic.online 
+                          ? "Keep the app open. Emergency dispatches along Andheri Western Express Highway route will trigger alarm."
+                          : "Toggle Online switch above to start receiving breakdown and towing rescue dispatches."}
+                      </p>
+                    </div>
+
+                    {myMechanic.online && (
+                      <button
+                        onClick={() => setMechJobState('alert')}
+                        className="px-4 py-2 bg-indigo-50 text-indigo-700 border border-indigo-100 rounded-xl text-[10px] font-bold hover:bg-indigo-100 transition"
+                      >
+                        (Trigger Mock Distress Alert)
+                      </button>
+                    )}
+                  </div>
+                )}
+
+                {mechJobState === 'alert' && (
+                  <div className="bg-[#0D1117] text-white p-5 rounded-3xl border border-red-500/25 space-y-6 shadow-xl relative overflow-hidden">
+                    <div className="absolute inset-0 bg-red-500/5 animate-pulse" />
+                    <div className="text-center relative z-10 space-y-2">
+                      <span className="bg-red-600 text-white text-[9px] font-bold px-2 py-0.5 rounded-full uppercase tracking-widest animate-pulse">
+                        🚨 RESCUE DISPATCH ALARM
+                      </span>
+                      <h3 className="text-lg font-black text-white">Car Mechanical Breakdown</h3>
+                      <p className="text-xs text-gray-400">Distance: 1.8 km away • ETA: 4 mins</p>
+                    </div>
+
+                    <div className="bg-white/5 border border-white/10 p-3.5 rounded-2xl space-y-2 relative z-10 text-xs text-left">
+                      <div className="flex justify-between font-semibold">
+                        <span className="text-gray-400">CLIENT</span>
+                        <span className="text-white">Tausif Khan</span>
+                      </div>
+                      <div className="flex justify-between font-semibold">
+                        <span className="text-gray-400">VEHICLE</span>
+                        <span className="text-white">White Maruti WagonR</span>
+                      </div>
+                      <div className="flex justify-between font-semibold">
+                        <span className="text-gray-400">LOCATION</span>
+                        <span className="text-white text-right">WEH Highway near flyover</span>
+                      </div>
+                      <div className="flex justify-between font-semibold pt-1.5 border-t border-white/10 text-yellow-400 font-bold">
+                        <span>BASE EARNING</span>
+                        <span>₹199</span>
+                      </div>
+                    </div>
+
+                    <div className="flex gap-3 relative z-10">
+                      <button 
+                        onClick={() => setMechJobState('transit')}
+                        className="flex-1 bg-emerald-600 hover:bg-emerald-500 text-white py-3 rounded-xl text-xs font-bold transition shadow-lg shadow-emerald-600/10"
+                      >
+                        Accept Rescue
+                      </button>
+                      <button 
+                        onClick={() => setMechJobState('idle')}
+                        className="px-4 bg-white/10 hover:bg-white/20 text-white py-3 rounded-xl text-xs font-bold transition"
+                      >
+                        Decline
+                      </button>
+                    </div>
+                  </div>
+                )}
+
+                {mechJobState === 'transit' && (
+                  <div className="bg-white rounded-3xl border border-gray-150 p-4 space-y-4 shadow-sm flex flex-col justify-between">
+                    <div>
+                      <span className="bg-indigo-50 text-indigo-700 text-[8px] px-2 py-0.5 rounded font-extrabold uppercase tracking-wider inline-block mb-1">Transit routing</span>
+                      <h4 className="text-sm font-black text-gray-850">Heading to Client Location</h4>
+                      <p className="text-xs text-gray-400">ETA: 4 minutes | Distance: 1.8 km</p>
+                    </div>
+
+                    {/* Mock Navigation Grid */}
+                    <div className="aspect-[4/3] rounded-2xl bg-[#E8EAED] relative overflow-hidden border border-gray-200">
+                      <div className="absolute inset-0 bg-[#E5E5E5] opacity-50" style={{ backgroundImage: 'radial-gradient(#b4b8c0 1px, transparent 1px)', backgroundSize: '15px 15px' }} />
+                      <svg className="absolute inset-0 w-full h-full">
+                        <path d="M 40,150 Q 150,140 180,80" fill="none" stroke="#3B82F6" strokeWidth="4" strokeDasharray="5 5" />
+                      </svg>
+                      {/* Mechanic Location Dot */}
+                      <div className="absolute top-[150px] left-[40px] -translate-x-1/2 -translate-y-1/2">
+                        <div className="w-4 h-4 bg-emerald-500 rounded-full border-2 border-white shadow flex items-center justify-center">
+                          <div className="w-1.5 h-1.5 bg-white rounded-full animate-ping" />
+                        </div>
+                      </div>
+                      {/* Client Pin */}
+                      <div className="absolute top-[80px] left-[180px] -translate-x-1/2 -translate-y-1/2 text-lg">
+                        📍
+                      </div>
+                    </div>
+
+                    <button
+                      onClick={() => setMechJobState('otp')}
+                      className="w-full bg-[#0D1117] text-white py-3.5 rounded-xl text-xs font-bold hover:bg-gray-800 transition"
+                    >
+                      I Have Arrived at Location
+                    </button>
+                  </div>
+                )}
+
+                {mechJobState === 'otp' && (
+                  <div className="bg-white rounded-3xl border border-gray-150 p-4 space-y-4 shadow-sm">
+                    <div className="text-center">
+                      <span className="text-2xl">🔑</span>
+                      <h4 className="text-sm font-black text-[#0D1117] mt-1">Verify Rescue Service Entry</h4>
+                      <p className="text-xs text-gray-400 px-4 mt-0.5">Please ask the customer for the security OTP shown on their screen.</p>
+                    </div>
+
+                    <div className="space-y-2">
+                      <input 
+                        type="tel"
+                        maxLength={4}
+                        placeholder="e.g. 4812"
+                        value={mechOtpInput}
+                        onChange={(e) => setMechOtpInput(e.target.value.replace(/\D/g, ''))}
+                        className="w-full p-3 bg-gray-50 border border-gray-200 rounded-xl text-center text-xl font-bold tracking-widest focus:outline-none focus:border-[#FFB800]"
+                      />
+                      {mechOtpError && <p className="text-red-500 text-[10px] text-center">{mechOtpError}</p>}
+                      <p className="text-[9px] text-gray-400 text-center">Note: Use 4812 or check the client booking detail dashboard.</p>
+                    </div>
+
+                    <button
+                      onClick={() => {
+                        if (mechOtpInput === '4812' || mechOtpInput === '1234' || mechOtpInput.length === 4) {
+                          setMechJobState('completed');
+                          setMechOtpError('');
+                          completeBooking(50);
+                          setTimeout(() => {
+                            setMechJobState('idle');
+                            setMechOtpInput('');
+                          }, 3000);
+                        } else {
+                          setMechOtpError('Incorrect customer security OTP.');
+                        }
+                      }}
+                      className="w-full bg-[#FFB800] text-[#0D1117] py-3.5 rounded-xl text-xs font-bold hover:bg-yellow-400 transition"
+                    >
+                      Verify OTP & Finish Rescue
+                    </button>
+                  </div>
+                )}
+
+                {mechJobState === 'completed' && (
+                  <div className="bg-emerald-500/10 border border-emerald-500/25 p-5 rounded-3xl text-center space-y-3">
+                    <div className="w-12 h-12 rounded-full bg-emerald-500/20 text-emerald-600 border border-emerald-500/30 flex items-center justify-center mx-auto text-xl">
+                      ✓
+                    </div>
+                    <h4 className="text-sm font-black text-emerald-700">Rescue Work Completed!</h4>
+                    <p className="text-xs text-slate-500 px-4">Payout ledger updated. Base fee + tip credited to wallet.</p>
+                  </div>
+                )}
+
+              </div>
+
+              {/* Earnings & Toggle-off */}
+              <div className="space-y-2 pt-2 border-t border-gray-150">
+                <div className="flex justify-between items-center text-xs font-semibold text-gray-750 px-1 bg-white p-3 rounded-xl border border-gray-100 shadow-sm">
+                  <span className="text-gray-400">TODAY'S EARNINGS:</span>
+                  <span className="text-[#16A34A] font-extrabold">₹249.00</span>
+                </div>
+                
+                <button 
+                  onClick={() => {
+                    if (myMechanic.online) {
+                      toggleMechanicOnline('my-mobile-mech');
+                    }
+                    setScreen('home');
+                  }}
+                  className="w-full text-center text-xs text-indigo-600 font-bold hover:underline py-1.5"
+                >
+                  Switch back to User App View
+                </button>
+              </div>
+
             </div>
           )}
 
