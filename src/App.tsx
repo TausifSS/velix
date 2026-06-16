@@ -126,7 +126,7 @@ const AppLayout = () => {
 export default function App() {
   return (
     <AppProvider>
-      <Router>
+      <Router basename={import.meta.env.BASE_URL}>
         <AppLayout />
       </Router>
     </AppProvider>
