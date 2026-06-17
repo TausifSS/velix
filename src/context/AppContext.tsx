@@ -82,8 +82,8 @@ interface AppContextType {
   setSOSModalActive: (active: boolean) => void;
   
   // Role-Based extensions
-  currentUserRole: 'user' | 'mechanic' | 'admin';
-  setCurrentUserRole: (role: 'user' | 'mechanic' | 'admin') => void;
+  currentUserRole: 'user' | 'mechanic' | 'business' | 'admin';
+  setCurrentUserRole: (role: 'user' | 'mechanic' | 'business' | 'admin') => void;
   mechanicFleet: any[];
   userReports: any[];
   submitMechanicKyc: (details: any) => void;
@@ -208,7 +208,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
   const [isSOSModalActive, setSOSModalActive] = useState<boolean>(false);
 
   // 7. Role-Based States
-  const [currentUserRole, setCurrentUserRole] = useState<'user' | 'mechanic' | 'admin'>('user');
+  const [currentUserRole, setCurrentUserRole] = useState<'user' | 'mechanic' | 'business' | 'admin'>('user');
   const [mechanicFleet, setMechanicFleet] = useState<any[]>([
     { id: '1', name: 'A1 Car Care', rating: 4.8, reviews: 320, distance: '2.4 km', eta: '6 mins', visitCharge: '₹199', verified: true, services: ['Breakdown', 'Battery'], status: 'approved', kyc: { aadhaar: '3211 4556 9901', pan: 'BCKDP9921D', videoUrl: 'mock_video_1.mp4' }, phone: '+91 98765 43201', online: true },
     { id: '2', name: 'Speedy Rescue', rating: 4.7, reviews: 210, distance: '3.1 km', eta: '8 mins', visitCharge: '₹199', verified: true, services: ['Towing', 'Breakdown'], status: 'approved', kyc: { aadhaar: '8812 4433 9921', pan: 'AALPK4431Z', videoUrl: 'mock_video_2.mp4' }, phone: '+91 98765 43202', online: true },
