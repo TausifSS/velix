@@ -44,6 +44,7 @@ export const CustomerApp: React.FC<CustomerAppProps> = ({ screen, setScreen }) =
   const [ratingVal, setRatingVal] = useState<number>(5);
   const [mapSelectedMech, setMapSelectedMech] = useState<any>(null);
   const [bookingFilter, setBookingFilter] = useState<string>('completed');
+  const [showExitTrackingModal, setShowExitTrackingModal] = useState<boolean>(false);
 
   // Synchronize screen state based on booking flow transitions
   useEffect(() => {
@@ -411,12 +412,20 @@ export const CustomerApp: React.FC<CustomerAppProps> = ({ screen, setScreen }) =
         currentBooking ? (
           <div className="flex-1 flex flex-col justify-between bg-white relative">
             <div className="bg-white p-4 border-b border-gray-100 shadow-sm shrink-0 flex items-center justify-between">
-              <div>
-                <h3 className="text-xs font-black text-[#0D1117] flex items-center gap-1.5">
-                  Live Tracking
-                  <span className="w-2.5 h-2.5 bg-green-500 rounded-full animate-ping"></span>
-                </h3>
-                <p className="text-[10px] text-gray-400 font-bold uppercase mt-0.5">{currentBooking.mechanicName} is on the way</p>
+              <div className="flex items-center gap-2.5">
+                <button 
+                  onClick={() => setShowExitTrackingModal(true)} 
+                  className="p-1 hover:bg-gray-100 rounded-full shrink-0"
+                >
+                  <ArrowLeft className="w-4.5 h-4.5 text-gray-700" />
+                </button>
+                <div>
+                  <h3 className="text-xs font-black text-[#0D1117] flex items-center gap-1.5">
+                    Live Tracking
+                    <span className="w-2.5 h-2.5 bg-green-500 rounded-full animate-ping"></span>
+                  </h3>
+                  <p className="text-[10px] text-gray-400 font-bold uppercase mt-0.5">{currentBooking.mechanicName} is on the way</p>
+                </div>
               </div>
               <div className="bg-[#FFF9E5] text-[#FFB800] text-xs font-extrabold px-3 py-1.5 rounded-xl border border-yellow-100">
                 {currentBooking.status === 'arrived' ? 'Arrived' : currentBooking.eta}
@@ -534,6 +543,36 @@ export const CustomerApp: React.FC<CustomerAppProps> = ({ screen, setScreen }) =
                 Cancel Service Dispatch
               </button>
             </div>
+
+            {showExitTrackingModal && (
+              <div className="absolute inset-0 bg-slate-900/60 flex items-center justify-center p-6 z-50 animate-in fade-in duration-200">
+                <div className="bg-white rounded-3xl p-6 w-full max-w-[320px] text-center space-y-4 shadow-2xl border border-gray-100">
+                  <div className="w-12 h-12 bg-amber-50 rounded-full flex items-center justify-center mx-auto text-amber-500 text-xl border border-amber-100">⚠️</div>
+                  <div className="space-y-1.5">
+                    <h4 className="text-sm font-black text-slate-900">Exit Live Tracking?</h4>
+                    <p className="text-[10px] text-gray-500 leading-relaxed font-medium">Your emergency dispatch will continue in the background. You can reopen tracking anytime from the home screen.</p>
+                  </div>
+                  <div className="grid grid-cols-2 gap-2.5 pt-2">
+                    <button 
+                      onClick={() => setShowExitTrackingModal(false)}
+                      className="py-2.5 bg-gray-100 hover:bg-gray-200 text-slate-700 font-bold text-xs rounded-xl transition"
+                    >
+                      Stay Here
+                    </button>
+                    <button 
+                      onClick={() => {
+                        setShowExitTrackingModal(false);
+                        setScreen('home');
+                      }}
+                      className="py-2.5 bg-[#0D1117] hover:bg-slate-900 text-white font-bold text-xs rounded-xl shadow-lg transition"
+                    >
+                      Go Back
+                    </button>
+                  </div>
+                </div>
+              </div>
+            )}
+
           </div>
         ) : (
           <div className="flex-1 flex items-center justify-center p-6 text-center text-slate-500">
@@ -1125,6 +1164,9 @@ export const CustomerApp: React.FC<CustomerAppProps> = ({ screen, setScreen }) =
         <div className="flex-1 flex flex-col justify-between bg-[#F5F6F8] relative">
           {/* Header Map filter */}
           <div className="absolute top-4 inset-x-4 bg-white p-3 rounded-2xl border border-gray-200 shadow-lg z-10 flex items-center gap-3">
+            <button onClick={() => setScreen('home')} className="p-1 hover:bg-gray-100 rounded-full shrink-0">
+              <ArrowLeft className="w-4.5 h-4.5 text-gray-700" />
+            </button>
             <Search className="w-4 h-4 text-gray-400 shrink-0" />
             <input type="text" placeholder="Search rescue fleet on WEH highway..." className="w-full bg-transparent text-xs font-semibold focus:outline-none placeholder-gray-400" />
           </div>
