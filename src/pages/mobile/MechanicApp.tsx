@@ -100,7 +100,10 @@ export const MechanicApp: React.FC<MechanicAppProps> = ({ setScreen }) => {
               <span className="font-black text-xl tracking-tight text-white">VELIX</span>
             </div>
             
-            <button className="w-8 h-8 rounded-full bg-white/10 flex items-center justify-center relative hover:bg-white/15">
+            <button 
+              onClick={() => alert("Notification Center: No new warnings or dispatches at this moment.")}
+              className="w-8 h-8 rounded-full bg-white/10 flex items-center justify-center relative hover:bg-white/15 active:scale-95 transition"
+            >
               <span className="absolute top-1.5 right-1.5 w-2 h-2 bg-red-500 rounded-full border border-[#0D1117]"></span>
               <Clock className="w-4 h-4 text-gray-300" />
             </button>
@@ -109,7 +112,10 @@ export const MechanicApp: React.FC<MechanicAppProps> = ({ setScreen }) => {
           {/* Profile Card row */}
           <div className="flex justify-between items-center mt-6">
             <div className="flex gap-3.5 items-center">
-              <div className="w-12 h-12 rounded-full border-2 border-[#FFB800] overflow-hidden bg-slate-800 shadow-md">
+              <div 
+                onClick={() => setActiveTab('profile')} 
+                className="w-12 h-12 rounded-full border-2 border-[#FFB800] overflow-hidden bg-slate-800 shadow-md cursor-pointer hover:opacity-90 transition shrink-0"
+              >
                 <img src="https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&q=80&w=120" alt="Arjun Avatar" className="w-full h-full object-cover" />
               </div>
               <div>
@@ -123,24 +129,36 @@ export const MechanicApp: React.FC<MechanicAppProps> = ({ setScreen }) => {
               </div>
             </div>
 
-            <div className="bg-[#FFB800] text-slate-950 font-black text-xs px-3 py-1.5 rounded-xl shadow-md flex items-center gap-1">
+            <button 
+              onClick={() => setActiveTab('profile')}
+              className="bg-[#FFB800] text-slate-950 font-black text-xs px-3 py-1.5 rounded-xl shadow-md flex items-center gap-1 hover:bg-yellow-400 active:scale-95 transition"
+            >
               <span>★</span> 4.8
-            </div>
+            </button>
           </div>
 
           {/* Stats Summary row */}
           <div className="grid grid-cols-3 gap-2 mt-6 pt-5 border-t border-white/5 text-center text-xs">
-            <div>
+            <div 
+              onClick={() => setActiveTab('earnings')}
+              className="cursor-pointer hover:bg-white/5 p-1 rounded-lg transition active:scale-95"
+            >
               <span className="text-[9px] text-slate-400 font-bold block uppercase tracking-wider">Today's Earnings</span>
               <span className="text-sm font-black text-[#FFB800] mt-1 block">₹{todayEarnings}</span>
               <span className="text-[8px] text-emerald-400 font-bold mt-0.5 block">↑ 18% vs yesterday</span>
             </div>
-            <div className="border-x border-white/5">
+            <div 
+              onClick={() => setActiveTab('jobs')}
+              className="border-x border-white/5 cursor-pointer hover:bg-white/5 p-1 rounded-lg transition active:scale-95"
+            >
               <span className="text-[9px] text-slate-400 font-bold block uppercase tracking-wider">Jobs Completed</span>
               <span className="text-sm font-black text-white mt-1 block">{completedJobsCount}</span>
               <span className="text-[8px] text-slate-500 font-bold mt-0.5 block">vs yesterday</span>
             </div>
-            <div>
+            <div 
+              onClick={() => setActiveTab('profile')}
+              className="cursor-pointer hover:bg-white/5 p-1 rounded-lg transition active:scale-95"
+            >
               <span className="text-[9px] text-slate-400 font-bold block uppercase tracking-wider">Rating</span>
               <span className="text-sm font-black text-white mt-1 block">4.8 ★</span>
               <span className="text-[8px] text-slate-500 font-bold mt-0.5 block">(128 reviews)</span>

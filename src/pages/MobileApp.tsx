@@ -120,9 +120,9 @@ export const MobileApp: React.FC = () => {
     ['home', 'bookings', 'map', 'profile', 'support', 'service_category', 'vehicles', 'wallet', 'plus'].includes(screen);
 
   return (
-    <div className="w-full h-screen bg-[#F5F6F8] md:bg-[#16171d] flex items-center justify-center select-none text-[#0d1117] font-sans">
-      {/* Centered mobile screen simulation on desktop, full-bleed on mobile viewports */}
-      <div className="w-full h-full md:max-w-[420px] md:h-[840px] md:bg-white md:rounded-[36px] md:shadow-[0_20px_50px_rgba(0,0,0,0.3)] md:border md:border-gray-300 overflow-hidden flex flex-col relative bg-[#F5F6F8]">
+    <div className="w-full h-screen bg-[#0d0f14] flex items-center justify-center select-none text-[#0d1117] font-sans overflow-hidden">
+      {/* Fixed-size medium simulated mobile screen for all viewports (desktop & mobile) */}
+      <div className="w-[375px] h-[812px] bg-white rounded-[40px] shadow-[0_25px_60px_rgba(0,0,0,0.85)] border-[6px] border-[#16181f] overflow-hidden flex flex-col relative shrink-0">
         
         {/* Scrollable Screen Body Container */}
         <div className="flex-1 overflow-y-auto bg-[#F5F6F8] flex flex-col min-h-0 text-[#0d1117]">

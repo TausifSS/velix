@@ -103,25 +103,37 @@ export const BusinessApp: React.FC<BusinessAppProps> = ({ setScreen }) => {
           <div className="animate-in fade-in duration-200">
             {/* Stats Grid Dashboard Card */}
             <div className="mx-4 -mt-6 bg-white rounded-2xl p-4 shadow-lg border border-slate-100 grid grid-cols-2 gap-3.5">
-              <div className="p-3 bg-slate-50/50 rounded-xl border border-slate-100">
+              <div 
+                onClick={() => setActiveTab('bookings')}
+                className="p-3 bg-slate-50/50 rounded-xl border border-slate-100 cursor-pointer hover:bg-slate-100/80 active:scale-95 transition"
+              >
                 <span className="text-[9px] text-slate-400 font-bold block uppercase">Total Bookings</span>
                 <span className="text-lg font-black text-slate-900 mt-0.5 block">{currentStats.bookings}</span>
                 <span className="text-[9px] font-bold text-emerald-600 block mt-1">{currentStats.bookDiff} vs last week</span>
               </div>
 
-              <div className="p-3 bg-slate-50/50 rounded-xl border border-slate-100">
+              <div 
+                onClick={() => setActiveTab('bookings')}
+                className="p-3 bg-slate-50/50 rounded-xl border border-slate-100 cursor-pointer hover:bg-slate-100/80 active:scale-95 transition"
+              >
                 <span className="text-[9px] text-slate-400 font-bold block uppercase">Completed Jobs</span>
                 <span className="text-lg font-black text-slate-900 mt-0.5 block">{currentStats.completed}</span>
                 <span className="text-[9px] font-bold text-emerald-600 block mt-1">{currentStats.compDiff} vs last week</span>
               </div>
 
-              <div className="p-3 bg-slate-50/50 rounded-xl border border-slate-100">
+              <div 
+                onClick={() => setActiveTab('menu')}
+                className="p-3 bg-slate-50/50 rounded-xl border border-slate-100 cursor-pointer hover:bg-slate-100/80 active:scale-95 transition"
+              >
                 <span className="text-[9px] text-slate-400 font-bold block uppercase">Total Earnings</span>
                 <span className="text-lg font-black text-emerald-600 mt-0.5 block">{currentStats.earnings}</span>
                 <span className="text-[9px] font-bold text-emerald-600 block mt-1">{currentStats.earnDiff} vs last week</span>
               </div>
 
-              <div className="p-3 bg-slate-50/50 rounded-xl border border-slate-100">
+              <div 
+                onClick={() => setActiveTab('mechanics')}
+                className="p-3 bg-slate-50/50 rounded-xl border border-slate-100 cursor-pointer hover:bg-slate-100/80 active:scale-95 transition"
+              >
                 <span className="text-[9px] text-slate-400 font-bold block uppercase">Active Mechanics</span>
                 <span className="text-lg font-black text-slate-900 mt-0.5 block">{currentStats.active}</span>
                 <span className="text-[9px] font-semibold text-slate-550 block mt-1 flex items-center gap-1">
