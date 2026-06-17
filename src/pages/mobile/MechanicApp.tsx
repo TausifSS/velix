@@ -42,7 +42,10 @@ export const MechanicApp: React.FC<MechanicAppProps> = ({ setScreen }) => {
         setTimeLeft(prev => prev - 1);
       }, 1000);
     } else if (timeLeft === 0 && jobState === 'request') {
-      setJobState('idle');
+      const handle = setTimeout(() => {
+        setJobState('idle');
+      }, 0);
+      return () => clearTimeout(handle);
     }
     return () => clearInterval(timer);
   }, [jobState, timeLeft]);
