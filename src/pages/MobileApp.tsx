@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { useApp } from '../context/AppContext';
 import { 
   Home as HomeIcon, CalendarDays, AlertTriangle, 
-  ChevronRight, ArrowLeft, ChevronDown, Map, User
+  ArrowLeft, ChevronDown, Map, User
 } from 'lucide-react';
 
 // Import modular apps
@@ -25,6 +25,7 @@ export const MobileApp: React.FC = () => {
   const [otpCode, setOtpCode] = useState<string>('');
   const [showOtpScreen, setShowOtpScreen] = useState<boolean>(false);
   const [onboardingSlide, setOnboardingSlide] = useState<number>(0);
+  const [loginRole, setLoginRole] = useState<'user' | 'mechanic' | 'business'>('user');
 
   // Mechanic KYC input states
   const [kycName, setKycName] = useState<string>('National Auto Garage');
@@ -123,56 +124,62 @@ export const MobileApp: React.FC = () => {
           {screen === 'splash' && (
             <div className="flex-1 bg-white flex flex-col justify-between p-6">
               <div className="text-center my-auto space-y-6">
-                <div className="flex flex-col items-center">
-                  <div className="w-16 h-16 bg-[#FFF9E5] rounded-2xl flex items-center justify-center mb-4 border border-yellow-200 animate-pulse">
-                    <svg viewBox="0 0 100 100" className="w-10 h-10">
-                      <path d="M30 20 L10 80 L35 80 L50 45 Z" fill="#FFB800" />
-                      <path d="M70 20 L90 80 L65 80 L50 45 Z" fill="#FFB800" />
+                <div className="flex justify-center">
+                  <div className="w-20 h-20 bg-[#FFB800] rounded-[24px] flex items-center justify-center shadow-xl shadow-yellow-500/10">
+                    <svg viewBox="0 0 100 100" className="w-12 h-12 fill-slate-950">
+                      <path d="M30 20 L10 80 L35 80 L50 45 Z" />
+                      <path d="M70 20 L90 80 L65 80 L50 45 Z" />
                     </svg>
                   </div>
-                  <h1 className="text-3xl font-black text-[#0D1117] tracking-tight">VELIX</h1>
-                  <p className="text-gray-400 text-[10px] font-bold uppercase tracking-widest mt-1">Never Stranded Again.</p>
+                </div>
+                <div className="space-y-2">
+                  <h1 className="text-3xl font-black text-slate-950 tracking-tight">VELIX</h1>
+                  <p className="text-[10px] text-slate-500 uppercase tracking-widest font-black">Emergency Roadside Rescue</p>
                 </div>
               </div>
-              <div className="text-center text-[9px] text-gray-400 font-bold uppercase tracking-wider shrink-0">
-                VELIX APP V2.0
-              </div>
+              <p className="text-center text-[10px] text-gray-400 font-bold uppercase tracking-wider">Crafted for Western Express Highway</p>
             </div>
           )}
 
           {/* SCREEN: Onboarding */}
           {screen === 'onboarding' && (
-            <div className="flex-1 bg-white flex flex-col justify-between p-6">
+            <div className="flex-1 bg-white p-6 flex flex-col justify-between">
+              {/* Skip button */}
               <div className="flex justify-end">
-                <button onClick={() => setScreen('auth')} className="text-sm font-bold text-gray-400 hover:text-black">Skip</button>
+                <button 
+                  onClick={() => setScreen('auth')}
+                  className="text-xs font-bold text-gray-500 hover:text-slate-950"
+                >
+                  Skip
+                </button>
               </div>
 
-              <div className="text-center my-auto py-10 space-y-6 animate-in zoom-in-95 duration-200">
-                <div className="text-7xl">{onboardingSlides[onboardingSlide].emoji}</div>
-                <h2 className="text-2xl font-black text-[#0D1117] leading-tight">
-                  {onboardingSlides[onboardingSlide].title}
-                </h2>
-                <p className="text-gray-500 text-sm leading-relaxed px-4">
-                  {onboardingSlides[onboardingSlide].description}
-                </p>
+              {/* Slider screen */}
+              <div className="text-center space-y-8 my-auto">
+                <div className="text-8xl">{onboardingSlides[onboardingSlide].emoji}</div>
+                <div className="space-y-3 px-4">
+                  <h2 className="text-2xl font-black text-slate-905 leading-tight">{onboardingSlides[onboardingSlide].title}</h2>
+                  <p className="text-xs text-gray-500 leading-relaxed font-medium">{onboardingSlides[onboardingSlide].description}</p>
+                </div>
               </div>
 
+              {/* Pagination controls */}
               <div className="space-y-6">
                 <div className="flex justify-center gap-2">
                   {onboardingSlides.map((_, idx) => (
                     <div 
                       key={idx} 
-                      className={`h-2 rounded-full transition-all duration-300 ${onboardingSlide === idx ? 'w-6 bg-[#FFB800]' : 'w-2 bg-gray-200'}`}
+                      className={`h-2 rounded-full transition-all ${onboardingSlide === idx ? 'w-6 bg-[#FFB800]' : 'w-2 bg-gray-250'}`}
                     />
                   ))}
                 </div>
 
-                {onboardingSlide < 2 ? (
+                {onboardingSlide < onboardingSlides.length - 1 ? (
                   <button 
                     onClick={() => setOnboardingSlide(prev => prev + 1)}
-                    className="w-full bg-[#0D1117] text-white py-4 rounded-xl font-bold text-sm hover:bg-gray-800 transition-colors"
+                    className="w-full bg-[#0D1117] text-white py-4 rounded-xl font-bold text-sm hover:bg-gray-800 transition-colors shadow-md"
                   >
-                    Continue
+                    Next
                   </button>
                 ) : (
                   <button 
@@ -190,7 +197,7 @@ export const MobileApp: React.FC = () => {
           {screen === 'auth' && (
             <div className="flex-1 bg-white p-6 flex flex-col justify-between">
               <div>
-                <div className="flex items-center gap-2 mb-6 mt-2">
+                <div className="flex items-center gap-2 mb-4 mt-2">
                   <svg viewBox="0 0 100 100" className="w-8 h-8">
                     <path d="M30 20 L10 80 L35 80 L50 45 Z" fill="#FFB800" />
                     <path d="M70 20 L90 80 L65 80 L50 45 Z" fill="#FFB800" />
@@ -200,19 +207,59 @@ export const MobileApp: React.FC = () => {
 
                 {!showOtpScreen ? (
                   <div className="space-y-6">
-                    <div>
-                      <h2 className="text-2xl font-black text-[#0D1117]">Welcome to Velix</h2>
-                      <p className="text-gray-500 text-xs mt-1 font-medium">Never Stranded Again.</p>
+                    {/* Are you a Business Owner banner */}
+                    <div 
+                      onClick={() => setLoginRole('business')}
+                      className={`p-3.5 rounded-2xl border text-center transition cursor-pointer select-none ${
+                        loginRole === 'business' 
+                          ? 'bg-amber-500/10 border-amber-400 text-amber-500 shadow-md shadow-amber-500/5' 
+                          : 'bg-indigo-900/10 border-indigo-200/50 text-indigo-950 hover:bg-indigo-900/15'
+                      }`}
+                    >
+                      <p className="text-[10px] font-black uppercase tracking-wider">Business Partner</p>
+                      <p className="text-xs font-black leading-tight mt-0.5">Are you a Business Owner? Start your business with us.</p>
                     </div>
 
-                    {/* Mechanic link banner */}
-                    <div className="bg-gradient-to-r from-indigo-900 to-indigo-800 p-3.5 rounded-2xl text-white flex justify-between items-center cursor-pointer hover:from-indigo-850 hover:to-indigo-750 transition duration-200"
-                         onClick={() => { setScreen('mechanic_kyc_step1'); }}>
-                      <div className="text-left">
-                        <p className="text-[9px] text-indigo-300 font-bold uppercase tracking-wider">Business Partner</p>
-                        <p className="text-xs font-black leading-tight mt-0.5">Are you a mechanic? Start business here</p>
-                      </div>
-                      <ChevronRight className="w-4 h-4 text-indigo-300" />
+                    <div className="space-y-2">
+                      <h2 className="text-2xl font-black text-[#0D1117]">Welcome to Velix</h2>
+                      <p className="text-gray-500 text-xs font-medium">Never Stranded Again.</p>
+                    </div>
+
+                    {/* Segmented Control for Login Role selection */}
+                    <div className="bg-gray-100 p-1 rounded-xl grid grid-cols-3 gap-1">
+                      <button
+                        type="button"
+                        onClick={() => setLoginRole('user')}
+                        className={`py-2 text-[10px] font-extrabold rounded-lg uppercase tracking-wider transition ${
+                          loginRole === 'user' 
+                            ? 'bg-white text-gray-900 shadow-sm' 
+                            : 'bg-transparent text-gray-400 hover:text-gray-650'
+                        }`}
+                      >
+                        Customer
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => setLoginRole('mechanic')}
+                        className={`py-2 text-[10px] font-extrabold rounded-lg uppercase tracking-wider transition ${
+                          loginRole === 'mechanic' 
+                            ? 'bg-white text-gray-900 shadow-sm' 
+                            : 'bg-transparent text-gray-400 hover:text-gray-650'
+                        }`}
+                      >
+                        Mechanic
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => setLoginRole('business')}
+                        className={`py-2 text-[10px] font-extrabold rounded-lg uppercase tracking-wider transition ${
+                          loginRole === 'business' 
+                            ? 'bg-white text-gray-900 shadow-sm' 
+                            : 'bg-transparent text-gray-400 hover:text-gray-650'
+                        }`}
+                      >
+                        Business
+                      </button>
                     </div>
 
                     <div className="py-2 flex justify-center">
@@ -270,8 +317,14 @@ export const MobileApp: React.FC = () => {
                     <button 
                       onClick={() => {
                         if (otpCode === '4812' || mobileNumber === '9876543210') {
-                          setCurrentUserRole('user');
-                          setScreen('home');
+                          setCurrentUserRole(loginRole);
+                          if (loginRole === 'user') {
+                            setScreen('home');
+                          } else if (loginRole === 'business') {
+                            setScreen('business_dashboard');
+                          } else if (loginRole === 'mechanic') {
+                            setScreen('mechanic_dashboard');
+                          }
                         } else {
                           alert('Invalid OTP code. Enter 4812');
                         }
@@ -599,11 +652,11 @@ export const MobileApp: React.FC = () => {
           )}
 
           {currentUserRole === 'business' && !['splash', 'onboarding', 'auth'].includes(screen) && (
-            <BusinessApp />
+            <BusinessApp setScreen={setScreen} />
           )}
 
           {currentUserRole === 'mechanic' && !['splash', 'onboarding', 'auth', 'mechanic_pending'].includes(screen) && (
-            <MechanicApp />
+            <MechanicApp setScreen={setScreen} />
           )}
 
         </div>
