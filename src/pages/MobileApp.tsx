@@ -4,6 +4,7 @@ import {
   Home as HomeIcon, CalendarDays, AlertTriangle, 
   ArrowLeft, ChevronDown, ChevronRight, Map, User
 } from 'lucide-react';
+import { auth, RecaptchaVerifier, signInWithPhoneNumber } from '../config/firebase';
 
 // Import modular apps
 import { CustomerApp } from './mobile/CustomerApp';
@@ -15,7 +16,8 @@ export const MobileApp: React.FC = () => {
   const {
     mechanicFleet, verifyMechanicPartner,
     submitMechanicKyc,
-    currentUserRole, setCurrentUserRole
+    currentUserRole, setCurrentUserRole,
+    updateUser
   } = useApp();
 
   // Screen State
@@ -27,6 +29,12 @@ export const MobileApp: React.FC = () => {
   const [onboardingSlide, setOnboardingSlide] = useState<number>(0);
   const [partnerType, setPartnerType] = useState<'mechanic' | 'business'>('mechanic');
   const [partnerMode, setPartnerMode] = useState<'login' | 'register'>('login');
+
+  // Firebase auth & API states
+  const [confirmationResult, setConfirmationResult] = useState<any>(null);
+  const [authError, setAuthError] = useState<string>('');
+  const [isAuthLoading, setIsAuthLoading] = useState<boolean>(false);
+  const [partnerIdToken, setPartnerIdToken] = useState<string>('');
 
   // Custom Business Owner registration inputs
   const [kycGarageName, setKycGarageName] = useState<string>('AutoFix Hub');
@@ -43,6 +51,257 @@ export const MobileApp: React.FC = () => {
   const [videoScanStatus, setVideoScanStatus] = useState<'idle' | 'recording' | 'finished'>('idle');
 
   const myMechanic = mechanicFleet.find(m => m.id === 'my-mobile-mech') || { status: 'none', online: false };
+
+  // Send OTP with Firebase Phone Auth (Invisible reCAPTCHA)
+  const sendOtp = async (phone: string) => {
+    setAuthError('');
+    setIsAuthLoading(true);
+    try {
+      const formattedPhone = `+91${phone}`;
+      
+      // Get or create RecaptchaVerifier
+      let verifier = (window as any).recaptchaVerifier;
+      if (!verifier) {
+        verifier = new RecaptchaVerifier(auth, 'recaptcha-container', {
+          size: 'invisible',
+          callback: () => {
+            // reCAPTCHA solved
+          },
+          'expired-callback': () => {
+            setAuthError('reCAPTCHA expired. Please try again.');
+          }
+        });
+        (window as any).recaptchaVerifier = verifier;
+      }
+
+      const confirmation = await signInWithPhoneNumber(auth, formattedPhone, verifier);
+      setConfirmationResult(confirmation);
+      setShowOtpScreen(true);
+    } catch (err: any) {
+      console.error('Error sending OTP:', err);
+      let errMsg = 'Failed to send OTP. Please check the phone number or try again later.';
+      if (err.message) {
+        if (err.message.includes('too-many-requests') || err.code === 'auth/too-many-requests') {
+          errMsg = 'Too many requests. Please try again later or use a registered testing phone number.';
+        } else {
+          errMsg = err.message;
+        }
+      }
+      setAuthError(errMsg);
+    } finally {
+      setIsAuthLoading(false);
+    }
+  };
+
+  // Verify OTP for Customer & Sync with Backend
+  const verifyCustomerOtp = async () => {
+    if (!confirmationResult) {
+      // Fallback for debug/mock if no session exists (e.g. testing mode)
+      if (otpCode === '4812' || mobileNumber === '9876543210') {
+        updateUser({ phone: `+91 ${mobileNumber}` });
+        setCurrentUserRole('user');
+        setScreen('home');
+        return;
+      }
+      setAuthError('No active verification session. Please request OTP again.');
+      return;
+    }
+
+    setAuthError('');
+    setIsAuthLoading(true);
+    try {
+      const result = await confirmationResult.confirm(otpCode);
+      const user = result.user;
+      const idToken = await user.getIdToken();
+
+      // Call Express sync API on Render
+      const backendUrl = import.meta.env.VITE_BACKEND_URL || 'https://velix-myzf.onrender.com';
+      const syncRes = await fetch(`${backendUrl}/api/auth/sync`, {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${idToken}`,
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          name: '',
+          email: '',
+          role: 'user',
+        }),
+      });
+
+      if (!syncRes.ok) {
+        const errData = await syncRes.json();
+        throw new Error(errData.error || 'Failed to sync user profile with server.');
+      }
+
+      const syncData = await syncRes.json();
+      console.log('User synced:', syncData);
+
+      // Update local AppContext user state
+      updateUser({
+        name: syncData.profile?.name || '',
+        phone: syncData.profile?.phone || user.phoneNumber || `+91 ${mobileNumber}`,
+        email: syncData.profile?.email || '',
+      });
+
+      setCurrentUserRole('user');
+      setScreen('home');
+    } catch (err: any) {
+      console.error('Error verifying OTP / Syncing:', err);
+      setAuthError(err.message || 'Verification failed. Please check the code.');
+    } finally {
+      setIsAuthLoading(false);
+    }
+  };
+
+  // Verify OTP for Partner & Check Role on Backend
+  const verifyPartnerOtp = async () => {
+    if (!confirmationResult) {
+      // Fallback for debug/mock if no session exists (e.g. testing mode)
+      if (otpCode === '4812' || mobileNumber === '9876543210') {
+        if (partnerMode === 'login') {
+          setCurrentUserRole(partnerType);
+          if (partnerType === 'business') {
+            setScreen('business_dashboard');
+          } else {
+            if (myMechanic.status === 'approved') {
+              setScreen('mechanic_dashboard');
+            } else {
+              setScreen('mechanic_pending');
+            }
+          }
+        } else {
+          setScreen('partner_kyc_step1');
+        }
+        return;
+      }
+      setAuthError('No active verification session. Please request OTP again.');
+      return;
+    }
+
+    setAuthError('');
+    setIsAuthLoading(true);
+    try {
+      const result = await confirmationResult.confirm(otpCode);
+      const user = result.user;
+      const idToken = await user.getIdToken();
+
+      const backendUrl = import.meta.env.VITE_BACKEND_URL || 'https://velix-myzf.onrender.com';
+
+      if (partnerMode === 'login') {
+        // Fetch user profile from backend
+        const profileRes = await fetch(`${backendUrl}/api/auth/profile`, {
+          method: 'GET',
+          headers: {
+            'Authorization': `Bearer ${idToken}`,
+          },
+        });
+
+        if (!profileRes.ok) {
+          if (profileRes.status === 404) {
+            throw new Error('No registered partner account found for this phone number. Please choose "Register (New)" instead.');
+          }
+          const errData = await profileRes.json();
+          throw new Error(errData.error || 'Failed to retrieve partner profile.');
+        }
+
+        const profileData = await profileRes.json();
+        console.log('Partner profile retrieved:', profileData);
+
+        const profile = profileData.profile;
+        if (profile.role !== partnerType) {
+          throw new Error(`This account is registered as a "${profile.role}", but you selected "${partnerType}". Please select the correct role.`);
+        }
+
+        // Update local state
+        updateUser({
+          name: profile.name,
+          phone: profile.phone,
+          email: profile.email,
+        });
+
+        setCurrentUserRole(partnerType);
+        if (partnerType === 'business') {
+          setScreen('business_dashboard');
+        } else {
+          if (myMechanic.status === 'approved') {
+            setScreen('mechanic_dashboard');
+          } else {
+            setScreen('mechanic_pending');
+          }
+        }
+      } else {
+        // Registration mode: save ID Token and proceed to onboarding forms
+        setPartnerIdToken(idToken);
+        setScreen('partner_kyc_step1');
+      }
+    } catch (err: any) {
+      console.error('Error in partner auth:', err);
+      setAuthError(err.message || 'Verification failed. Please check the code.');
+    } finally {
+      setIsAuthLoading(false);
+    }
+  };
+
+  // Submit KYC Application for Partner and Sync to Backend
+  const submitPartnerKyc = async () => {
+    setAuthError('');
+    setIsAuthLoading(true);
+    try {
+      const partnerName = partnerType === 'mechanic' ? kycName : kycGarageName;
+      const partnerPhone = partnerType === 'mechanic' ? kycPhone : kycPhone || `+91 ${mobileNumber}`;
+
+      // Call submitMechanicKyc to sync local context state
+      submitMechanicKyc({
+        id: 'my-mobile-mech',
+        name: partnerName,
+        phone: partnerPhone,
+        services: partnerType === 'mechanic' ? kycServices : ['Breakdown', 'Battery', 'Towing', 'Fuel', 'Tyre'],
+        aadhaar: kycAadhaar,
+        pan: kycPan,
+        videoUrl: 'my_kyc_video.mp4'
+      });
+
+      // Synchronize profile with Render Express API
+      if (partnerIdToken) {
+        const backendUrl = import.meta.env.VITE_BACKEND_URL || 'https://velix-myzf.onrender.com';
+        const syncRes = await fetch(`${backendUrl}/api/auth/sync`, {
+          method: 'POST',
+          headers: {
+            'Authorization': `Bearer ${partnerIdToken}`,
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({
+            name: partnerName,
+            email: '',
+            role: partnerType,
+          }),
+        });
+
+        if (!syncRes.ok) {
+          const errData = await syncRes.json();
+          throw new Error(errData.error || 'Failed to sync partner profile with server.');
+        }
+
+        const syncData = await syncRes.json();
+        console.log('Partner profile synced:', syncData);
+
+        // Update local AppContext user state
+        updateUser({
+          name: syncData.profile?.name || partnerName,
+          phone: syncData.profile?.phone || partnerPhone,
+        });
+      }
+
+      setScreen('partner_pending');
+    } catch (err: any) {
+      console.error('Error submitting partner KYC sync:', err);
+      alert(err.message || 'Failed to submit KYC to backend server. Proceeding locally.');
+      setScreen('partner_pending'); // Transition anyway to allow fallback testing
+    } finally {
+      setIsAuthLoading(false);
+    }
+  };
 
   // Auto transition splash screen to onboarding
   useEffect(() => {
@@ -121,6 +380,9 @@ export const MobileApp: React.FC = () => {
 
   return (
     <div className="w-full h-screen bg-white md:bg-[#EEF0F7] flex items-center justify-center select-none text-[#0d1117] font-sans overflow-hidden">
+      {/* Invisible reCAPTCHA container for Firebase auth */}
+      <div id="recaptcha-container" style={{ display: 'none' }}></div>
+
       {/* Responsive layout: Full-bleed on mobile viewports, clean rounded card on desktop */}
       <div className="w-full h-full md:w-[375px] md:h-[812px] md:max-h-[90vh] bg-white rounded-none md:rounded-[32px] border-0 md:border md:border-slate-200/80 shadow-none md:shadow-[0_20px_50px_rgba(15,23,42,0.08)] overflow-hidden flex flex-col relative shrink-0">
         
@@ -252,20 +514,33 @@ export const MobileApp: React.FC = () => {
                       />
                     </div>
 
+                    {authError && (
+                      <div className="p-3 bg-red-50 border border-red-200 rounded-xl text-xs text-red-600 font-bold leading-normal">
+                        {authError}
+                      </div>
+                    )}
+
                     <button 
                       onClick={() => {
                         if (mobileNumber.length === 10) {
-                          setShowOtpScreen(true);
+                          sendOtp(mobileNumber);
                         }
                       }}
-                      disabled={mobileNumber.length !== 10}
-                      className={`w-full py-4 rounded-xl font-extrabold text-sm transition-all ${
-                        mobileNumber.length === 10 
+                      disabled={mobileNumber.length !== 10 || isAuthLoading}
+                      className={`w-full py-4 rounded-xl font-extrabold text-sm transition-all flex justify-center items-center gap-2 ${
+                        mobileNumber.length === 10 && !isAuthLoading
                           ? 'bg-[#FFB800] text-[#0D1117] hover:bg-yellow-400 shadow-md shadow-yellow-500/20 active:scale-95' 
                           : 'bg-gray-100 text-gray-400 cursor-not-allowed'
                       }`}
                     >
-                      Continue
+                      {isAuthLoading ? (
+                        <>
+                          <span className="w-4 h-4 border-2 border-[#0D1117] border-t-transparent rounded-full animate-spin" />
+                          <span>Sending OTP...</span>
+                        </>
+                      ) : (
+                        'Continue'
+                      )}
                     </button>
                   </div>
                 ) : (
@@ -273,32 +548,43 @@ export const MobileApp: React.FC = () => {
                     <div>
                       <h2 className="text-2xl font-black text-[#0D1117]">Verify OTP</h2>
                       <p className="text-gray-500 text-xs mt-1">Enter code sent to +91 {mobileNumber.slice(0,5)} {mobileNumber.slice(5)}</p>
-                      <p className="text-[#16A34A] text-xs font-bold mt-1.5 bg-green-50 px-2 py-1 rounded inline-block">Hint code: 4812</p>
+                      <p className="text-[#16A34A] text-xs font-bold mt-1.5 bg-green-50 px-2 py-1 rounded inline-block">Hint code: 4812 (for testing)</p>
                     </div>
 
                     <input 
                       type="tel"
-                      maxLength={4}
-                      placeholder="Enter 4-digit OTP"
+                      maxLength={6}
+                      placeholder="Enter verification code"
                       value={otpCode}
                       onChange={(e) => setOtpCode(e.target.value.replace(/\D/g, ''))}
                       className="w-full p-4 bg-gray-50 border border-gray-200 rounded-xl text-center text-2xl font-bold tracking-widest focus:outline-none focus:border-[#FFB800]"
                     />
 
+                    {authError && (
+                      <div className="p-3 bg-red-50 border border-red-200 rounded-xl text-xs text-red-600 font-bold leading-normal">
+                        {authError}
+                      </div>
+                    )}
+
                     <button 
-                      onClick={() => {
-                        if (otpCode === '4812' || mobileNumber === '9876543210') {
-                          setCurrentUserRole('user');
-                          setScreen('home');
-                        } else {
-                          alert('Invalid OTP code. Enter 4812');
-                        }
-                      }}
-                      className="w-full bg-[#0D1117] text-white py-4 rounded-xl font-bold text-sm hover:bg-gray-800 transition-colors shadow-md"
+                      onClick={verifyCustomerOtp}
+                      disabled={otpCode.length < 4 || isAuthLoading}
+                      className={`w-full py-4 rounded-xl font-bold text-sm transition-colors shadow-md flex justify-center items-center gap-2 ${
+                        otpCode.length >= 4 && !isAuthLoading
+                          ? 'bg-[#0D1117] text-white hover:bg-gray-800'
+                          : 'bg-gray-100 text-gray-400 cursor-not-allowed'
+                      }`}
                     >
-                      Verify & Log In
+                      {isAuthLoading ? (
+                        <>
+                          <span className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />
+                          <span>Verifying...</span>
+                        </>
+                      ) : (
+                        'Verify & Log In'
+                      )}
                     </button>
-                    <button onClick={() => setShowOtpScreen(false)} className="w-full text-xs font-bold text-gray-400 text-center hover:underline">Change Phone Number</button>
+                    <button onClick={() => { setShowOtpScreen(false); setAuthError(''); }} className="w-full text-xs font-bold text-gray-400 text-center hover:underline">Change Phone Number</button>
                   </div>
                 )}
               </div>
@@ -464,64 +750,76 @@ export const MobileApp: React.FC = () => {
                         />
                       </div>
 
+                      {authError && (
+                        <div className="p-3 bg-red-50 border border-red-200 rounded-xl text-xs text-red-600 font-bold leading-normal">
+                          {authError}
+                        </div>
+                      )}
+
                       <button 
                         onClick={() => {
                           if (mobileNumber.length === 10) {
-                            setShowOtpScreen(true);
+                            sendOtp(mobileNumber);
                           }
                         }}
-                        disabled={mobileNumber.length !== 10}
-                        className={`w-full py-4 rounded-xl font-extrabold text-sm transition-all ${
-                          mobileNumber.length === 10 
+                        disabled={mobileNumber.length !== 10 || isAuthLoading}
+                        className={`w-full py-4 rounded-xl font-extrabold text-sm transition-all flex justify-center items-center gap-2 ${
+                          mobileNumber.length === 10 && !isAuthLoading
                             ? 'bg-[#FFB800] text-[#0D1117] hover:bg-yellow-400 shadow-md shadow-yellow-500/20 active:scale-95' 
                             : 'bg-gray-100 text-gray-400 cursor-not-allowed'
                         }`}
                       >
-                        Continue
+                        {isAuthLoading ? (
+                          <>
+                            <span className="w-4 h-4 border-2 border-[#0D1117] border-t-transparent rounded-full animate-spin" />
+                            <span>Sending OTP...</span>
+                          </>
+                        ) : (
+                          'Continue'
+                        )}
                       </button>
                     </div>
                   ) : (
                     <div className="space-y-5">
                       <div>
                         <p className="text-gray-500 text-xs mt-1">Enter code sent to +91 {mobileNumber.slice(0,5)} {mobileNumber.slice(5)}</p>
-                        <p className="text-[#16A34A] text-xs font-bold mt-1.5 bg-green-50 px-2 py-1 rounded inline-block">Hint code: 4812</p>
+                        <p className="text-[#16A34A] text-xs font-bold mt-1.5 bg-green-50 px-2 py-1 rounded inline-block">Hint code: 4812 (for testing)</p>
                       </div>
 
                       <input 
                         type="tel"
-                        maxLength={4}
-                        placeholder="Enter OTP"
+                        maxLength={6}
+                        placeholder="Enter verification code"
                         value={otpCode}
                         onChange={(e) => setOtpCode(e.target.value.replace(/\D/g, ''))}
                         className="w-full p-3.5 bg-gray-50 border border-gray-200 rounded-xl text-center text-xl font-bold tracking-widest focus:outline-none focus:border-[#FFB800]"
                       />
 
+                      {authError && (
+                        <div className="p-3 bg-red-50 border border-red-200 rounded-xl text-xs text-red-600 font-bold leading-normal">
+                          {authError}
+                        </div>
+                      )}
+
                       <button 
-                        onClick={() => {
-                          if (otpCode === '4812' || mobileNumber === '9876543210') {
-                            if (partnerMode === 'login') {
-                              setCurrentUserRole(partnerType);
-                              if (partnerType === 'business') {
-                                setScreen('business_dashboard');
-                              } else {
-                                if (myMechanic.status === 'approved') {
-                                  setScreen('mechanic_dashboard');
-                                } else {
-                                  setScreen('mechanic_pending');
-                                }
-                              }
-                            } else {
-                              setScreen('partner_kyc_step1');
-                            }
-                          } else {
-                            alert('Invalid OTP code. Enter 4812');
-                          }
-                        }}
-                        className="w-full bg-[#0D1117] text-white py-4 rounded-xl font-bold text-sm hover:bg-gray-800 transition-colors shadow-md"
+                        onClick={verifyPartnerOtp}
+                        disabled={otpCode.length < 4 || isAuthLoading}
+                        className={`w-full py-4 rounded-xl font-bold text-sm transition-colors shadow-md flex justify-center items-center gap-2 ${
+                          otpCode.length >= 4 && !isAuthLoading
+                            ? 'bg-[#0D1117] text-white hover:bg-gray-800'
+                            : 'bg-gray-100 text-gray-400 cursor-not-allowed'
+                        }`}
                       >
-                        Verify & Log In
+                        {isAuthLoading ? (
+                          <>
+                            <span className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />
+                            <span>Verifying...</span>
+                          </>
+                        ) : (
+                          'Verify & Log In'
+                        )}
                       </button>
-                      <button onClick={() => setShowOtpScreen(false)} className="w-full text-xs font-bold text-gray-400 text-center hover:underline">Change Phone Number</button>
+                      <button onClick={() => { setShowOtpScreen(false); setAuthError(''); }} className="w-full text-xs font-bold text-gray-400 text-center hover:underline">Change Phone Number</button>
                     </div>
                   )}
                 </div>
@@ -816,22 +1114,18 @@ export const MobileApp: React.FC = () => {
               </div>
 
               <button
-                onClick={() => {
-                  submitMechanicKyc({
-                    id: 'my-mobile-mech',
-                    name: partnerType === 'mechanic' ? kycName : kycGarageName,
-                    phone: partnerType === 'mechanic' ? kycPhone : kycPhone || '+91 99222 33344',
-                    services: partnerType === 'mechanic' ? kycServices : ['Breakdown', 'Battery', 'Towing', 'Fuel', 'Tyre'],
-                    aadhaar: kycAadhaar,
-                    pan: kycPan,
-                    videoUrl: 'my_kyc_video.mp4'
-                  });
-                  setScreen('partner_pending');
-                }}
-                disabled={videoScanStatus !== 'finished'}
-                className="w-full bg-[#FFB800] text-[#0D1117] py-4 rounded-xl font-bold text-xs hover:bg-yellow-400 transition shadow-md mt-6 disabled:bg-gray-100 disabled:text-gray-400"
+                onClick={submitPartnerKyc}
+                disabled={videoScanStatus !== 'finished' || isAuthLoading}
+                className="w-full bg-[#FFB800] text-[#0D1117] py-4 rounded-xl font-bold text-xs hover:bg-yellow-400 transition shadow-md mt-6 disabled:bg-gray-100 disabled:text-gray-400 flex justify-center items-center gap-2"
               >
-                Submit KYC Application
+                {isAuthLoading ? (
+                  <>
+                    <span className="w-4 h-4 border-2 border-[#0D1117] border-t-transparent rounded-full animate-spin" />
+                    <span>Submitting Application...</span>
+                  </>
+                ) : (
+                  'Submit KYC Application'
+                )}
               </button>
             </div>
           )}

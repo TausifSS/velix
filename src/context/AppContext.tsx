@@ -90,6 +90,7 @@ interface AppContextType {
   verifyMechanicPartner: (id: string, status: 'approved' | 'rejected') => void;
   toggleMechanicOnline: (id: string) => void;
   addReport: (bookingId: string, issue: string) => void;
+  updateUser: (data: Partial<User>) => void;
 }
 
 const AppContext = createContext<AppContextType | undefined>(undefined);
@@ -529,6 +530,13 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     setUserReports((prev) => [newReport, ...prev]);
   };
 
+  const updateUser = (data: Partial<User>) => {
+    setUser((prev) => ({
+      ...prev,
+      ...data,
+    }));
+  };
+
   return (
     <AppContext.Provider
       value={{
@@ -561,6 +569,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
         verifyMechanicPartner,
         toggleMechanicOnline,
         addReport,
+        updateUser,
       }}
     >
       {children}
