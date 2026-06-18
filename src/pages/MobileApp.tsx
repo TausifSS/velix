@@ -75,7 +75,7 @@ export const MobileApp: React.FC = () => {
 
   // Symmetrical Bottom Nav rendering helper for Customer App
   const renderBottomNav = () => (
-    <div className="grid grid-cols-5 w-full bg-white border-t border-gray-150 pt-3.5 pb-6 rounded-b-[32px] shrink-0 text-center z-50">
+    <div className="grid grid-cols-5 w-full bg-white border-t border-gray-150 pt-3.5 pb-6 md:rounded-b-[32px] shrink-0 text-center z-50">
       <button 
         onClick={() => setScreen('home')}
         className={`flex flex-col items-center justify-center gap-1 ${screen === 'home' ? 'text-[#FFB800]' : 'text-gray-400 hover:text-gray-600'}`}
@@ -120,9 +120,9 @@ export const MobileApp: React.FC = () => {
     ['home', 'bookings', 'map', 'profile', 'support', 'service_category', 'vehicles', 'wallet', 'plus'].includes(screen);
 
   return (
-    <div className="w-full h-screen bg-[#EEF0F7] flex items-center justify-center select-none text-[#0d1117] font-sans overflow-hidden p-3 md:p-6">
-      {/* Premium modern bezel mockup with soft shadow inspired by high-end design */}
-      <div className="w-full max-w-[375px] h-full max-h-[812px] bg-white rounded-[44px] shadow-[0_30px_70px_rgba(15,23,42,0.18)] border-[8px] border-[#0F172A] overflow-hidden flex flex-col relative shrink-0">
+    <div className="w-full h-screen bg-white md:bg-[#EEF0F7] flex items-center justify-center select-none text-[#0d1117] font-sans overflow-hidden">
+      {/* Responsive layout: Full-bleed on mobile viewports, clean rounded card on desktop */}
+      <div className="w-full h-full md:w-[375px] md:h-[812px] md:max-h-[90vh] bg-white rounded-none md:rounded-[32px] border-0 md:border md:border-slate-200/80 shadow-none md:shadow-[0_20px_50px_rgba(15,23,42,0.08)] overflow-hidden flex flex-col relative shrink-0">
         
         {/* Scrollable Screen Body Container */}
         <div className="flex-1 overflow-y-auto bg-[#F5F6F8] flex flex-col min-h-0 text-[#0d1117]">
