@@ -381,7 +381,7 @@ export const MobileApp: React.FC = () => {
   return (
     <div className="w-full h-screen bg-white md:bg-[#EEF0F7] flex items-center justify-center select-none text-[#0d1117] font-sans overflow-hidden">
       {/* Invisible reCAPTCHA container for Firebase auth */}
-      <div id="recaptcha-container" style={{ display: 'none' }}></div>
+      <div id="recaptcha-container"></div>
 
       {/* Responsive layout: Full-bleed on mobile viewports, clean rounded card on desktop */}
       <div className="w-full h-full md:w-[375px] md:h-[812px] md:max-h-[90vh] bg-white rounded-none md:rounded-[32px] border-0 md:border md:border-slate-200/80 shadow-none md:shadow-[0_20px_50px_rgba(15,23,42,0.08)] overflow-hidden flex flex-col relative shrink-0">
