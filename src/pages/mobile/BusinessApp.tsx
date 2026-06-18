@@ -419,7 +419,7 @@ export const BusinessApp: React.FC<BusinessAppProps> = ({ setScreen }) => {
       </div>
 
       {/* Symmetrical Bottom Tab Bar */}
-      <div className="grid grid-cols-5 w-full bg-white border-t border-slate-150 py-3 text-center shrink-0">
+      <div className="grid grid-cols-5 w-full bg-white border-t border-slate-150 pt-3.5 pb-6 text-center shrink-0">
         <button 
           onClick={() => setActiveTab('dashboard')}
           className={`flex flex-col items-center justify-center gap-1 ${activeTab === 'dashboard' ? 'text-[#FFB800]' : 'text-gray-400'}`}
