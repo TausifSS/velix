@@ -37,17 +37,17 @@ export const MobileApp: React.FC = () => {
   const [partnerIdToken, setPartnerIdToken] = useState<string>('');
 
   // Custom Business Owner registration inputs
-  const [kycGarageName, setKycGarageName] = useState<string>('AutoFix Hub');
-  const [kycOwnerName, setKycOwnerName] = useState<string>('Vikram Shah');
-  const [kycAddress, setKycAddress] = useState<string>('WEH highway Mile 12, Mumbai');
-  const [kycLicenseGst, setKycLicenseGst] = useState<string>('27AADCV9921C1Z4');
+  const [kycGarageName, setKycGarageName] = useState<string>('');
+  const [kycOwnerName, setKycOwnerName] = useState<string>('');
+  const [kycAddress, setKycAddress] = useState<string>('');
+  const [kycLicenseGst, setKycLicenseGst] = useState<string>('');
 
   // Mechanic KYC input states
-  const [kycName, setKycName] = useState<string>('National Auto Garage');
-  const [kycPhone, setKycPhone] = useState<string>('+91 98222 33344');
-  const [kycServices, setKycServices] = useState<string[]>(['Breakdown', 'Battery']);
-  const [kycAadhaar, setKycAadhaar] = useState<string>('5544 3322 1100');
-  const [kycPan, setKycPan] = useState<string>('APXDK9921C');
+  const [kycName, setKycName] = useState<string>('');
+  const [kycPhone, setKycPhone] = useState<string>('');
+  const [kycServices, setKycServices] = useState<string[]>([]);
+  const [kycAadhaar, setKycAadhaar] = useState<string>('');
+  const [kycPan, setKycPan] = useState<string>('');
   const [videoScanStatus, setVideoScanStatus] = useState<'idle' | 'recording' | 'finished'>('idle');
 
   const myMechanic = mechanicFleet.find(m => m.id === 'my-mobile-mech') || { status: 'none', online: false };
@@ -96,13 +96,6 @@ export const MobileApp: React.FC = () => {
   // Verify OTP for Customer & Sync with Backend
   const verifyCustomerOtp = async () => {
     if (!confirmationResult) {
-      // Fallback for debug/mock if no session exists (e.g. testing mode)
-      if (otpCode === '4812' || mobileNumber === '9876543210') {
-        updateUser({ phone: `+91 ${mobileNumber}` });
-        setCurrentUserRole('user');
-        setScreen('home');
-        return;
-      }
       setAuthError('No active verification session. Please request OTP again.');
       return;
     }
@@ -115,7 +108,7 @@ export const MobileApp: React.FC = () => {
       const idToken = await user.getIdToken();
 
       // Call Express sync API on Render
-      const backendUrl = import.meta.env.VITE_BACKEND_URL || 'https://velix-myzf.onrender.com';
+      const backendUrl = import.meta.env.VITE_BACKEND_URL || 'https://velix-ap.onrender.com';
       const syncRes = await fetch(`${backendUrl}/api/auth/sync`, {
         method: 'POST',
         headers: {
@@ -157,24 +150,6 @@ export const MobileApp: React.FC = () => {
   // Verify OTP for Partner & Check Role on Backend
   const verifyPartnerOtp = async () => {
     if (!confirmationResult) {
-      // Fallback for debug/mock if no session exists (e.g. testing mode)
-      if (otpCode === '4812' || mobileNumber === '9876543210') {
-        if (partnerMode === 'login') {
-          setCurrentUserRole(partnerType);
-          if (partnerType === 'business') {
-            setScreen('business_dashboard');
-          } else {
-            if (myMechanic.status === 'approved') {
-              setScreen('mechanic_dashboard');
-            } else {
-              setScreen('mechanic_pending');
-            }
-          }
-        } else {
-          setScreen('partner_kyc_step1');
-        }
-        return;
-      }
       setAuthError('No active verification session. Please request OTP again.');
       return;
     }
@@ -186,7 +161,7 @@ export const MobileApp: React.FC = () => {
       const user = result.user;
       const idToken = await user.getIdToken();
 
-      const backendUrl = import.meta.env.VITE_BACKEND_URL || 'https://velix-myzf.onrender.com';
+      const backendUrl = import.meta.env.VITE_BACKEND_URL || 'https://velix-ap.onrender.com';
 
       if (partnerMode === 'login') {
         // Fetch user profile from backend
@@ -264,7 +239,7 @@ export const MobileApp: React.FC = () => {
 
       // Synchronize profile with Render Express API
       if (partnerIdToken) {
-        const backendUrl = import.meta.env.VITE_BACKEND_URL || 'https://velix-myzf.onrender.com';
+        const backendUrl = import.meta.env.VITE_BACKEND_URL || 'https://velix-ap.onrender.com';
         const syncRes = await fetch(`${backendUrl}/api/auth/sync`, {
           method: 'POST',
           headers: {
