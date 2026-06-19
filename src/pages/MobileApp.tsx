@@ -532,7 +532,6 @@ export const MobileApp: React.FC = () => {
                     <div>
                       <h2 className="text-2xl font-black text-[#0D1117]">Verify OTP</h2>
                       <p className="text-gray-500 text-xs mt-1">Enter code sent to +91 {mobileNumber.slice(0,5)} {mobileNumber.slice(5)}</p>
-                      <p className="text-[#16A34A] text-xs font-bold mt-1.5 bg-green-50 px-2 py-1 rounded inline-block">Hint code: 4812 (for testing)</p>
                     </div>
 
                     <input 
@@ -777,7 +776,6 @@ export const MobileApp: React.FC = () => {
                     <div className="space-y-5">
                       <div>
                         <p className="text-gray-500 text-xs mt-1">Enter code sent to +91 {mobileNumber.slice(0,5)} {mobileNumber.slice(5)}</p>
-                        <p className="text-[#16A34A] text-xs font-bold mt-1.5 bg-green-50 px-2 py-1 rounded inline-block">Hint code: 4812 (for testing)</p>
                       </div>
 
                       <input 
