@@ -11,12 +11,14 @@ export const syncUserProfile = async (req: AuthenticatedRequest, res: Response) 
   const { uid, phone } = user;
   const { name, email, role } = req.body;
 
+  console.log(`Syncing profile for uid: ${uid}, phone: ${phone}, name: ${name}, role: ${role}`);
+
   try {
     const { data, error } = await supabase
       .from('profiles')
       .upsert({
         id: uid,
-        phone,
+        phone: phone || '',
         name: name || '',
         email: email || '',
         role: role || 'user',
@@ -25,12 +27,18 @@ export const syncUserProfile = async (req: AuthenticatedRequest, res: Response) 
       .select();
 
     if (error) {
+      console.error('Supabase error during sync:', error);
       return res.status(500).json({ error: error.message });
     }
 
-    return res.json({ success: true, profile: data[0] });
+    console.log('Profile synced successfully:', data);
+    return res.json({ 
+      success: true, 
+      profile: data && data.length > 0 ? data[0] : null 
+    });
   } catch (error: any) {
-    return res.status(500).json({ error: error.message });
+    console.error('Unhandled error during sync:', error);
+    return res.status(500).json({ error: error.message || 'Internal Server Error' });
   }
 };
 
