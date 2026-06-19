@@ -1,6 +1,15 @@
 import { Response } from 'express';
 import { AuthenticatedRequest } from '../middleware/auth.js';
-import { supabase } from '../config/supabase.js';
+import { isSupabaseConfigured, supabase } from '../config/supabase.js';
+
+interface Profile {
+  id: string;
+  phone: string;
+  name: string;
+  email: string;
+  role: string;
+  updated_at: string;
+}
 
 export const syncUserProfile = async (req: AuthenticatedRequest, res: Response) => {
   const user = req.user;
@@ -14,16 +23,24 @@ export const syncUserProfile = async (req: AuthenticatedRequest, res: Response) 
   console.log(`Syncing profile for uid: ${uid}, phone: ${phone}, name: ${name}, role: ${role}`);
 
   try {
+    const profile: Profile = {
+      id: uid,
+      phone: phone || '',
+      name: name || '',
+      email: email || '',
+      role: role || 'user',
+      updated_at: new Date().toISOString(),
+    };
+
+    if (!isSupabaseConfigured || !supabase) {
+      return res.status(503).json({
+        error: 'Supabase is not configured. Set SUPABASE_URL and SUPABASE_SERVICE_ROLE_KEY.',
+      });
+    }
+
     const { data, error } = await supabase
       .from('profiles')
-      .upsert({
-        id: uid,
-        phone: phone || '',
-        name: name || '',
-        email: email || '',
-        role: role || 'user',
-        updated_at: new Date().toISOString(),
-      })
+      .upsert(profile)
       .select();
 
     if (error) {
@@ -49,6 +66,12 @@ export const getUserProfile = async (req: AuthenticatedRequest, res: Response) =
   }
 
   try {
+    if (!isSupabaseConfigured || !supabase) {
+      return res.status(503).json({
+        error: 'Supabase is not configured. Set SUPABASE_URL and SUPABASE_SERVICE_ROLE_KEY.',
+      });
+    }
+
     const { data, error } = await supabase
       .from('profiles')
       .select('*')

@@ -12,9 +12,65 @@ import { BusinessApp } from './mobile/BusinessApp';
 import { MechanicApp } from './mobile/MechanicApp';
 import loginIllustration from '../assets/login_illustration.png';
 
+const API_BASE_URL = (import.meta.env.VITE_BACKEND_URL || 'http://localhost:10000').replace(/\/$/, '');
+
+interface ProfileSyncBody {
+  name: string;
+  email: string;
+  role: 'user' | 'mechanic' | 'business';
+}
+
+const readApiError = async (res: Response, fallback: string) => {
+  try {
+    const data = await res.json();
+    return data.error || fallback;
+  } catch {
+    return fallback;
+  }
+};
+
+const syncProfileWithBackend = async (idToken: string, body: ProfileSyncBody, fallbackPhone: string) => {
+  const syncRes = await fetch(`${API_BASE_URL}/api/auth/sync`, {
+    method: 'POST',
+    headers: {
+      'Authorization': `Bearer ${idToken}`,
+      'Content-Type': 'application/json',
+    },
+    body: JSON.stringify(body),
+  });
+
+  if (!syncRes.ok) {
+    throw new Error(await readApiError(syncRes, 'Failed to sync user profile with server.'));
+  }
+
+  const syncData = await syncRes.json();
+  return syncData.profile || {
+    name: body.name,
+    email: body.email,
+    role: body.role,
+    phone: fallbackPhone,
+  };
+};
+
+const getProfileFromBackend = async (idToken: string) => {
+  const profileRes = await fetch(`${API_BASE_URL}/api/auth/profile`, {
+    method: 'GET',
+    headers: {
+      'Authorization': `Bearer ${idToken}`,
+    },
+  });
+
+  if (!profileRes.ok) {
+    throw new Error(await readApiError(profileRes, 'Failed to retrieve partner profile.'));
+  }
+
+  const profileData = await profileRes.json();
+  return profileData.profile;
+};
+
 export const MobileApp: React.FC = () => {
   const {
-    mechanicFleet, verifyMechanicPartner,
+    mechanicFleet,
     submitMechanicKyc,
     currentUserRole, setCurrentUserRole,
     updateUser
@@ -107,34 +163,22 @@ export const MobileApp: React.FC = () => {
       const user = result.user;
       const idToken = await user.getIdToken();
 
-      // Call Express sync API on Render
-      const backendUrl = import.meta.env.VITE_BACKEND_URL || 'https://velix-ap.onrender.com';
-      const syncRes = await fetch(`${backendUrl}/api/auth/sync`, {
-        method: 'POST',
-        headers: {
-          'Authorization': `Bearer ${idToken}`,
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
+      const profile = await syncProfileWithBackend(
+        idToken,
+        {
           name: '',
           email: '',
           role: 'user',
-        }),
-      });
-
-      if (!syncRes.ok) {
-        const errData = await syncRes.json();
-        throw new Error(errData.error || 'Failed to sync user profile with server.');
-      }
-
-      const syncData = await syncRes.json();
-      console.log('User synced:', syncData);
+        },
+        user.phoneNumber || `+91 ${mobileNumber}`
+      );
+      console.log('User synced:', profile);
 
       // Update local AppContext user state
       updateUser({
-        name: syncData.profile?.name || '',
-        phone: syncData.profile?.phone || user.phoneNumber || `+91 ${mobileNumber}`,
-        email: syncData.profile?.email || '',
+        name: profile?.name || '',
+        phone: profile?.phone || user.phoneNumber || `+91 ${mobileNumber}`,
+        email: profile?.email || '',
       });
 
       setCurrentUserRole('user');
@@ -161,29 +205,11 @@ export const MobileApp: React.FC = () => {
       const user = result.user;
       const idToken = await user.getIdToken();
 
-      const backendUrl = import.meta.env.VITE_BACKEND_URL || 'https://velix-ap.onrender.com';
-
       if (partnerMode === 'login') {
-        // Fetch user profile from backend
-        const profileRes = await fetch(`${backendUrl}/api/auth/profile`, {
-          method: 'GET',
-          headers: {
-            'Authorization': `Bearer ${idToken}`,
-          },
-        });
+        const profile = await getProfileFromBackend(idToken);
 
-        if (!profileRes.ok) {
-          if (profileRes.status === 404) {
-            throw new Error('No registered partner account found for this phone number. Please choose "Register (New)" instead.');
-          }
-          const errData = await profileRes.json();
-          throw new Error(errData.error || 'Failed to retrieve partner profile.');
-        }
+        console.log('Partner profile retrieved:', profile);
 
-        const profileData = await profileRes.json();
-        console.log('Partner profile retrieved:', profileData);
-
-        const profile = profileData.profile;
         if (profile.role !== partnerType) {
           throw new Error(`This account is registered as a "${profile.role}", but you selected "${partnerType}". Please select the correct role.`);
         }
@@ -237,42 +263,30 @@ export const MobileApp: React.FC = () => {
         videoUrl: 'my_kyc_video.mp4'
       });
 
-      // Synchronize profile with Render Express API
+      // Synchronize profile with Express API when available.
       if (partnerIdToken) {
-        const backendUrl = import.meta.env.VITE_BACKEND_URL || 'https://velix-ap.onrender.com';
-        const syncRes = await fetch(`${backendUrl}/api/auth/sync`, {
-          method: 'POST',
-          headers: {
-            'Authorization': `Bearer ${partnerIdToken}`,
-            'Content-Type': 'application/json',
-          },
-          body: JSON.stringify({
+        const profile = await syncProfileWithBackend(
+          partnerIdToken,
+          {
             name: partnerName,
             email: '',
             role: partnerType,
-          }),
-        });
-
-        if (!syncRes.ok) {
-          const errData = await syncRes.json();
-          throw new Error(errData.error || 'Failed to sync partner profile with server.');
-        }
-
-        const syncData = await syncRes.json();
-        console.log('Partner profile synced:', syncData);
+          },
+          partnerPhone
+        );
+        console.log('Partner profile synced:', profile);
 
         // Update local AppContext user state
         updateUser({
-          name: syncData.profile?.name || partnerName,
-          phone: syncData.profile?.phone || partnerPhone,
+          name: profile?.name || partnerName,
+          phone: profile?.phone || partnerPhone,
         });
       }
 
       setScreen('partner_pending');
     } catch (err: any) {
       console.error('Error submitting partner KYC sync:', err);
-      alert(err.message || 'Failed to submit KYC to backend server. Proceeding locally.');
-      setScreen('partner_pending'); // Transition anyway to allow fallback testing
+      setAuthError(err.message || 'Failed to submit KYC to backend server.');
     } finally {
       setIsAuthLoading(false);
     }
@@ -288,13 +302,12 @@ export const MobileApp: React.FC = () => {
     }
   }, [screen]);
 
-  // Pre-warm the backend Render server on load
+  // Pre-warm the backend server on load.
   useEffect(() => {
-    const backendUrl = import.meta.env.VITE_BACKEND_URL || 'https://velix-1.onrender.com';
-    fetch(`${backendUrl}/health`)
+    fetch(`${API_BASE_URL}/health`)
       .then(res => res.json())
-      .then(data => console.log('Backend server pre-warmed:', data))
-      .catch(err => console.warn('Pre-warm request failed:', err));
+      .then(data => console.log('Backend server ready:', data))
+      .catch(err => console.info('Backend health check skipped:', err));
   }, []);
 
   // Onboarding slides data
@@ -318,7 +331,7 @@ export const MobileApp: React.FC = () => {
 
   // Symmetrical Bottom Nav rendering helper for Customer App
   const renderBottomNav = () => (
-    <div className="grid grid-cols-5 w-full bg-white border-t border-gray-150 pt-3.5 pb-6 md:rounded-b-[32px] shrink-0 text-center z-50">
+    <div className="grid grid-cols-5 w-full bg-white border-t border-gray-200 pt-3.5 pb-6 md:rounded-b-[32px] shrink-0 text-center z-50">
       <button 
         onClick={() => setScreen('home')}
         className={`flex flex-col items-center justify-center gap-1 ${screen === 'home' ? 'text-[#FFB800]' : 'text-gray-400 hover:text-gray-600'}`}
@@ -411,7 +424,7 @@ export const MobileApp: React.FC = () => {
               <div className="text-center space-y-8 my-auto">
                 <div className="text-8xl">{onboardingSlides[onboardingSlide].emoji}</div>
                 <div className="space-y-3 px-4">
-                  <h2 className="text-2xl font-black text-slate-905 leading-tight">{onboardingSlides[onboardingSlide].title}</h2>
+                  <h2 className="text-2xl font-black text-slate-900 leading-tight">{onboardingSlides[onboardingSlide].title}</h2>
                   <p className="text-xs text-gray-500 leading-relaxed font-medium">{onboardingSlides[onboardingSlide].description}</p>
                 </div>
               </div>
@@ -422,7 +435,7 @@ export const MobileApp: React.FC = () => {
                   {onboardingSlides.map((_, idx) => (
                     <div 
                       key={idx} 
-                      className={`h-2 rounded-full transition-all ${onboardingSlide === idx ? 'w-6 bg-[#FFB800]' : 'w-2 bg-gray-250'}`}
+                      className={`h-2 rounded-full transition-all ${onboardingSlide === idx ? 'w-6 bg-[#FFB800]' : 'w-2 bg-gray-300'}`}
                     />
                   ))}
                 </div>
@@ -468,7 +481,7 @@ export const MobileApp: React.FC = () => {
                         setShowOtpScreen(false);
                         setScreen('partner_selection');
                       }}
-                      className="p-3.5 rounded-2xl bg-indigo-50 border border-indigo-100 text-center transition cursor-pointer select-none hover:bg-indigo-100/80 active:scale-98"
+                      className="p-3.5 rounded-2xl bg-indigo-50 border border-indigo-100 text-center transition cursor-pointer select-none hover:bg-indigo-100/80 active:scale-95"
                     >
                       <p className="text-[9px] font-black text-indigo-600 uppercase tracking-widest">Business Partner Portal</p>
                       <p className="text-xs font-black text-indigo-950 leading-tight mt-1">Are you a Mechanic or Business Owner? Start business here</p>
@@ -545,17 +558,7 @@ export const MobileApp: React.FC = () => {
 
                     {authError && (
                       <div className="p-3 bg-red-50 border border-red-200 rounded-xl text-xs text-red-600 font-bold leading-normal">
-                        <p>{authError}</p>
-                        <button 
-                          onClick={() => {
-                            updateUser({ phone: `+91 ${mobileNumber}` });
-                            setCurrentUserRole('user');
-                            setScreen('home');
-                          }}
-                          className="block mt-2 underline text-indigo-700 font-black hover:text-indigo-950 text-[10px] uppercase tracking-wider text-left"
-                        >
-                          Bypass sync & continue locally (Mock mode)
-                        </button>
+                        {authError}
                       </div>
                     )}
 
@@ -608,7 +611,7 @@ export const MobileApp: React.FC = () => {
 
                 <div className="space-y-4">
                   <h3 className="text-lg font-black text-slate-900 leading-tight">Start your business on Velix</h3>
-                  <p className="text-xs text-gray-550 font-medium">Select your role to register or log in to your account.</p>
+                  <p className="text-xs text-gray-500 font-medium">Select your role to register or log in to your account.</p>
 
                   <div className="space-y-3 pt-2">
                     {/* Option A: Freelance Mechanic */}
@@ -620,7 +623,7 @@ export const MobileApp: React.FC = () => {
                         setPartnerType('mechanic');
                         setScreen('partner_auth');
                       }}
-                      className="p-4 rounded-2xl border border-slate-200 hover:border-[#FFB800] bg-slate-55/50 hover:bg-white transition cursor-pointer select-none space-y-2 shadow-sm active:scale-98"
+                      className="p-4 rounded-2xl border border-slate-200 hover:border-[#FFB800] bg-slate-50/50 hover:bg-white transition cursor-pointer select-none space-y-2 shadow-sm active:scale-95"
                     >
                       <div className="flex justify-between items-center">
                         <span className="text-2xl">🛠️</span>
@@ -641,7 +644,7 @@ export const MobileApp: React.FC = () => {
                         setPartnerType('business');
                         setScreen('partner_auth');
                       }}
-                      className="p-4 rounded-2xl border border-slate-200 hover:border-[#FFB800] bg-slate-55/50 hover:bg-white transition cursor-pointer select-none space-y-2 shadow-sm active:scale-98"
+                      className="p-4 rounded-2xl border border-slate-200 hover:border-[#FFB800] bg-slate-50/50 hover:bg-white transition cursor-pointer select-none space-y-2 shadow-sm active:scale-95"
                     >
                       <div className="flex justify-between items-center">
                         <span className="text-2xl">🏬</span>
@@ -789,24 +792,7 @@ export const MobileApp: React.FC = () => {
 
                       {authError && (
                         <div className="p-3 bg-red-50 border border-red-200 rounded-xl text-xs text-red-600 font-bold leading-normal">
-                          <p>{authError}</p>
-                          <button 
-                            onClick={() => {
-                              setCurrentUserRole(partnerType);
-                              if (partnerType === 'business') {
-                                setScreen('business_dashboard');
-                              } else {
-                                if (myMechanic.status === 'approved') {
-                                  setScreen('mechanic_dashboard');
-                                } else {
-                                  setScreen('mechanic_pending');
-                                }
-                              }
-                            }}
-                            className="block mt-2 underline text-indigo-700 font-black hover:text-indigo-950 text-[10px] uppercase tracking-wider text-left"
-                          >
-                            Bypass sync & continue locally (Mock mode)
-                          </button>
+                          {authError}
                         </div>
                       )}
 
@@ -899,7 +885,7 @@ export const MobileApp: React.FC = () => {
                             >
                               <span className="text-[11px]">{srv.label}</span>
                               <div className={`w-4 h-4 rounded border flex items-center justify-center ${
-                                isChecked ? 'bg-indigo-600 border-indigo-505 text-white' : 'border-gray-400'
+                                isChecked ? 'bg-indigo-600 border-indigo-500 text-white' : 'border-gray-400'
                               }`}>
                                 {isChecked && <span className="text-[10px] font-bold">✓</span>}
                               </div>
@@ -951,7 +937,7 @@ export const MobileApp: React.FC = () => {
                         value={kycLicenseGst} 
                         onChange={(e) => setKycLicenseGst(e.target.value.toUpperCase())} 
                         placeholder="e.g. 27AADCV9921C1Z4" 
-                        className="w-full p-3 bg-gray-50 border border-gray-200 rounded-xl focus:outline-none focus:border-[#FFB800] font-semibold text-slate-800 text-upper"
+                        className="w-full p-3 bg-gray-50 border border-gray-200 rounded-xl focus:outline-none focus:border-[#FFB800] font-semibold text-slate-800 uppercase"
                       />
                     </div>
                   </div>
@@ -1027,7 +1013,11 @@ export const MobileApp: React.FC = () => {
                   <div className="p-4 rounded-xl border border-dashed border-gray-200 bg-gray-50/30 text-center space-y-1">
                     <p className="text-[11px] font-bold text-gray-700">Scan Documents Photo</p>
                     <p className="text-[9px] text-gray-400">PDF, PNG, JPG accepted (max 4MB)</p>
-                    <div className="text-xs text-indigo-600 font-bold underline cursor-pointer mt-1">Simulated Upload Complete ✓</div>
+                    <input
+                      type="file"
+                      accept=".pdf,image/png,image/jpeg"
+                      className="mt-2 block w-full text-[10px] text-gray-500 file:mr-2 file:rounded-lg file:border-0 file:bg-indigo-50 file:px-3 file:py-2 file:text-[10px] file:font-bold file:text-indigo-700"
+                    />
                   </div>
                 </div>
               </div>
@@ -1159,7 +1149,7 @@ export const MobileApp: React.FC = () => {
                     <h3 className="text-white font-extrabold text-sm bg-slate-900 px-3 py-1.5 rounded-full inline-block">
                       Status: {myMechanic.status.toUpperCase()}
                     </h3>
-                    <p className="text-xs text-gray-550 mt-2 leading-relaxed px-4">
+                    <p className="text-xs text-gray-500 mt-2 leading-relaxed px-4">
                       {partnerType === 'mechanic' 
                         ? "Velix compliance officers are matching your Aadhaar, PAN card, and Video KYC declaration biometrics."
                         : "Velix compliance officers are matching your Business GST, owner Aadhaar/PAN, and storefront verification details."
@@ -1168,7 +1158,7 @@ export const MobileApp: React.FC = () => {
                   </div>
                 </div>
 
-                <div className="bg-gray-50 p-4 rounded-2xl border border-gray-150 space-y-3">
+                <div className="bg-gray-50 p-4 rounded-2xl border border-gray-200 space-y-3">
                   <h4 className="text-[10px] text-gray-400 font-bold uppercase tracking-wider">Document Checklist</h4>
                   <div className="flex items-center justify-between text-xs font-semibold">
                     <span className="text-gray-700">Aadhaar & PAN Match</span>
@@ -1198,7 +1188,7 @@ export const MobileApp: React.FC = () => {
                         setScreen('mechanic_dashboard');
                       }
                     } else {
-                      alert("Application is still pending. Use Debug Bypass below to approve instantly.");
+                      alert("Application is still pending verification.");
                     }
                   }}
                   className={`w-full py-4 rounded-xl font-bold text-xs transition shadow-md ${
@@ -1210,17 +1200,6 @@ export const MobileApp: React.FC = () => {
                   {myMechanic.status === 'approved' ? `Proceed to ${partnerType === 'business' ? 'Business' : 'Mechanic'} Dashboard` : "Refresh Status"}
                 </button>
 
-                {myMechanic.status !== 'approved' && (
-                  <button
-                    onClick={() => {
-                      verifyMechanicPartner('my-mobile-mech', 'approved');
-                      alert("Debug Bypass Triggered: Onboarding approved instantly!");
-                    }}
-                    className="w-full py-2 bg-indigo-50 text-indigo-700 border border-indigo-100 hover:bg-indigo-100 text-[10px] font-bold rounded-xl transition"
-                  >
-                    (Debug Bypass: Approve Instantly)
-                  </button>
-                )}
               </div>
             </div>
           )}

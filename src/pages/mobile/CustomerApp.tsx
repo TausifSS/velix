@@ -214,7 +214,7 @@ export const CustomerApp: React.FC<CustomerAppProps> = ({ screen, setScreen }) =
                       setSelectedMechanic(mech);
                       setScreen('mechanic_profile');
                     }}
-                    className="bg-white p-3.5 rounded-2xl border border-gray-150 flex justify-between items-center shadow-sm cursor-pointer hover:shadow-md transition-shadow"
+                    className="bg-white p-3.5 rounded-2xl border border-gray-200 flex justify-between items-center shadow-sm cursor-pointer hover:shadow-md transition-shadow"
                   >
                     <div className="flex gap-3">
                       <div className="w-10 h-10 bg-gray-50 rounded-xl border border-gray-200 flex items-center justify-center text-lg overflow-hidden shrink-0">
@@ -267,7 +267,7 @@ export const CustomerApp: React.FC<CustomerAppProps> = ({ screen, setScreen }) =
                     setSelectedMechanic(mech);
                     setScreen('mechanic_profile');
                   }}
-                  className="bg-white p-3.5 rounded-2xl border border-gray-150 flex justify-between items-center shadow-sm cursor-pointer"
+                  className="bg-white p-3.5 rounded-2xl border border-gray-200 flex justify-between items-center shadow-sm cursor-pointer"
                 >
                   <div className="flex gap-3">
                     <div className="w-10 h-10 bg-gray-50 rounded-xl border border-gray-200 flex items-center justify-center overflow-hidden shrink-0">
@@ -330,7 +330,7 @@ export const CustomerApp: React.FC<CustomerAppProps> = ({ screen, setScreen }) =
                 </div>
               </div>
 
-              <div className="grid grid-cols-3 gap-2 text-center border-y border-gray-150 py-3">
+              <div className="grid grid-cols-3 gap-2 text-center border-y border-gray-200 py-3">
                 <div>
                   <p className="text-[9px] text-gray-400 font-medium">Ratings</p>
                   <p className="text-xs font-black text-[#0D1117]">{selectedMechanic.rating} ★</p>
@@ -350,7 +350,7 @@ export const CustomerApp: React.FC<CustomerAppProps> = ({ screen, setScreen }) =
                 <h4 className="text-xs font-bold text-gray-400 uppercase tracking-wider">Services Offered</h4>
                 <div className="flex gap-2 overflow-x-auto py-1">
                   {categories.slice(0, 5).map((cat) => (
-                    <div key={cat.id} className="flex flex-col items-center p-2 border border-gray-150 rounded-xl bg-gray-50/50 min-w-[65px]">
+                    <div key={cat.id} className="flex flex-col items-center p-2 border border-gray-200 rounded-xl bg-gray-50/50 min-w-[65px]">
                       <cat.icon className="w-4 h-4 text-gray-600 mb-1" />
                       <span className="text-[8px] font-bold text-gray-500 whitespace-nowrap">{cat.name.split(' ')[0]}</span>
                     </div>
@@ -369,7 +369,7 @@ export const CustomerApp: React.FC<CustomerAppProps> = ({ screen, setScreen }) =
               {/* Upfront Pricing */}
               <div className="space-y-2.5">
                 <h4 className="text-xs font-bold text-gray-400 uppercase tracking-wider">Upfront Pricing</h4>
-                <div className="flex justify-between bg-gray-50 p-3 rounded-xl text-xs border border-gray-150">
+                <div className="flex justify-between bg-gray-50 p-3 rounded-xl text-xs border border-gray-200">
                   <div>
                     <p className="text-gray-650 font-bold">Mechanic Visit Fee</p>
                     <p className="text-[10px] text-gray-400 mt-0.5">(covers dispatcher travel & diagnosis)</p>
@@ -392,13 +392,13 @@ export const CustomerApp: React.FC<CustomerAppProps> = ({ screen, setScreen }) =
             <div className="grid grid-cols-2 gap-2">
               <a 
                 href={`tel:${user.phone}`} 
-                className="border border-gray-250 text-gray-700 py-2.5 rounded-xl text-xs font-bold hover:bg-gray-50 text-center flex items-center justify-center gap-1.5 transition-colors"
+                className="border border-gray-300 text-gray-700 py-2.5 rounded-xl text-xs font-bold hover:bg-gray-50 text-center flex items-center justify-center gap-1.5 transition-colors"
               >
                 <Phone className="w-3.5 h-3.5" /> Call Partner
               </a>
               <button 
                 onClick={() => { setScreen('map'); setMapSelectedMech(selectedMechanic); }}
-                className="border border-gray-250 text-gray-700 py-2.5 rounded-xl text-xs font-bold hover:bg-gray-50 text-center flex items-center justify-center gap-1.5 transition-colors"
+                className="border border-gray-300 text-gray-700 py-2.5 rounded-xl text-xs font-bold hover:bg-gray-50 text-center flex items-center justify-center gap-1.5 transition-colors"
               >
                 <Map className="w-3.5 h-3.5" /> View on Map
               </button>
@@ -469,7 +469,7 @@ export const CustomerApp: React.FC<CustomerAppProps> = ({ screen, setScreen }) =
             </div>
 
             {/* Bottom detail card */}
-            <div className="bg-white rounded-t-3xl border-t border-gray-150 p-4 shadow-lg shrink-0 space-y-4">
+            <div className="bg-white rounded-t-3xl border-t border-gray-200 p-4 shadow-lg shrink-0 space-y-4">
               <div className="flex justify-between items-center bg-gray-50/50 p-3 rounded-2xl border border-gray-100">
                 <div className="flex gap-2.5 items-center">
                   <img 
@@ -483,7 +483,7 @@ export const CustomerApp: React.FC<CustomerAppProps> = ({ screen, setScreen }) =
                   </div>
                 </div>
                 <div className="flex gap-1.5">
-                  <a href={`tel:${user.phone}`} className="w-8 h-8 bg-white border border-gray-250 rounded-full flex items-center justify-center text-gray-700 hover:bg-gray-100"><Phone className="w-4 h-4" /></a>
+                  <a href={`tel:${user.phone}`} className="w-8 h-8 bg-white border border-gray-300 rounded-full flex items-center justify-center text-gray-700 hover:bg-gray-100"><Phone className="w-4 h-4" /></a>
                   <button 
                     onClick={() => {
                       setScreen('map');
@@ -496,7 +496,7 @@ export const CustomerApp: React.FC<CustomerAppProps> = ({ screen, setScreen }) =
                         contact: user.phone
                       });
                     }}
-                    className="w-8 h-8 bg-white border border-gray-250 rounded-full flex items-center justify-center text-gray-700 hover:bg-gray-100"
+                    className="w-8 h-8 bg-white border border-gray-300 rounded-full flex items-center justify-center text-gray-700 hover:bg-gray-100"
                   >
                     <Map className="w-4 h-4" />
                   </button>
@@ -676,7 +676,7 @@ export const CustomerApp: React.FC<CustomerAppProps> = ({ screen, setScreen }) =
                   onClick={() => setRatingVal(star)}
                   className="text-3xl focus:outline-none"
                 >
-                  <span className={ratingVal >= star ? "text-[#FFB800]" : "text-gray-250"}>★</span>
+                  <span className={ratingVal >= star ? "text-[#FFB800]" : "text-gray-300"}>★</span>
                 </button>
               ))}
             </div>
@@ -767,14 +767,14 @@ export const CustomerApp: React.FC<CustomerAppProps> = ({ screen, setScreen }) =
 
             <div className="p-4 space-y-3">
               {bookings.filter(b => b.status === bookingFilter).map((b) => (
-                <div key={b.id} className="bg-white p-4 rounded-2xl border border-gray-150 shadow-sm space-y-3">
+                <div key={b.id} className="bg-white p-4 rounded-2xl border border-gray-200 shadow-sm space-y-3">
                   <div className="flex justify-between items-start">
                     <div>
                       <span className="text-[9px] text-gray-400 font-mono font-bold">{b.id}</span>
                       <h4 className="text-xs font-extrabold text-[#0D1117] mt-0.5">{b.mechanicName}</h4>
                       <p className="text-[9px] text-gray-400">{b.date} • {b.time}</p>
                     </div>
-                    <span className="text-xs font-extrabold text-slate-800 bg-slate-50 px-2 py-0.5 rounded border border-gray-150">
+                    <span className="text-xs font-extrabold text-slate-800 bg-slate-50 px-2 py-0.5 rounded border border-gray-200">
                       {b.price}
                     </span>
                   </div>
@@ -806,7 +806,7 @@ export const CustomerApp: React.FC<CustomerAppProps> = ({ screen, setScreen }) =
                 <div 
                   key={v.id} 
                   className={`bg-white p-4 rounded-2xl border relative flex justify-between items-center shadow-sm ${
-                    v.isDefault ? 'border-[#FFB800] ring-1 ring-[#FFB800]/25' : 'border-gray-150'
+                    v.isDefault ? 'border-[#FFB800] ring-1 ring-[#FFB800]/25' : 'border-gray-200'
                   }`}
                 >
                   <div className="flex gap-3">
@@ -905,7 +905,7 @@ export const CustomerApp: React.FC<CustomerAppProps> = ({ screen, setScreen }) =
       {screen === 'wallet' && (
         <div className="flex-1 flex flex-col justify-between bg-[#F5F6F8] p-4">
           <div>
-            <div className="bg-white p-4 border-b border-gray-150 flex items-center gap-3 shrink-0">
+            <div className="bg-white p-4 border-b border-gray-200 flex items-center gap-3 shrink-0">
               <button onClick={() => setScreen('home')} className="p-1"><ArrowLeft className="w-5 h-5 text-gray-700" /></button>
               <h2 className="text-sm font-black text-[#0D1117]">Velix Pay Wallet</h2>
             </div>
@@ -918,7 +918,7 @@ export const CustomerApp: React.FC<CustomerAppProps> = ({ screen, setScreen }) =
               </div>
             </div>
 
-            <div className="bg-white p-4 rounded-2xl border border-gray-150 mt-4 space-y-4">
+            <div className="bg-white p-4 rounded-2xl border border-gray-200 mt-4 space-y-4">
               <h4 className="text-[10px] text-gray-400 font-bold uppercase tracking-wider">Refill Wallet Cash</h4>
               <div className="flex gap-2">
                 {['200', '500', '1000'].map(amt => (
@@ -1021,7 +1021,7 @@ export const CustomerApp: React.FC<CustomerAppProps> = ({ screen, setScreen }) =
       {screen === 'support' && (
         <div className="flex-1 flex flex-col justify-between bg-white">
           {/* Header */}
-          <div className="bg-white p-4 border-b border-gray-150 flex items-center gap-3 shrink-0">
+          <div className="bg-white p-4 border-b border-gray-200 flex items-center gap-3 shrink-0">
             <button onClick={() => setScreen('home')} className="p-1 hover:bg-gray-100 rounded-full"><ArrowLeft className="w-5 h-5 text-gray-700" /></button>
             <div>
               <h2 className="text-sm font-black text-[#0D1117]">AI Rescue Diagnostics</h2>
@@ -1037,7 +1037,7 @@ export const CustomerApp: React.FC<CustomerAppProps> = ({ screen, setScreen }) =
                 className={`max-w-[80%] p-3.5 rounded-2xl text-xs font-semibold leading-relaxed shadow-sm ${
                   msg.sender === 'user' 
                     ? 'ml-auto bg-[#0D1117] text-white' 
-                    : 'bg-white border border-gray-150 text-gray-750'
+                    : 'bg-white border border-gray-200 text-gray-700'
                 }`}
               >
                 {msg.text}
@@ -1065,12 +1065,12 @@ export const CustomerApp: React.FC<CustomerAppProps> = ({ screen, setScreen }) =
       {screen === 'profile' && (
         <div className="flex-1 flex flex-col justify-between bg-[#F5F6F8]">
           <div className="overflow-y-auto">
-            <div className="bg-white p-4 border-b border-gray-150 shrink-0">
+            <div className="bg-white p-4 border-b border-gray-200 shrink-0">
               <h2 className="text-sm font-black text-[#0D1117]">Account Profile</h2>
             </div>
 
             <div className="p-4 space-y-4">
-              <div className="bg-white p-4 rounded-2xl border border-gray-150 flex items-center gap-3.5 shadow-sm">
+              <div className="bg-white p-4 rounded-2xl border border-gray-200 flex items-center gap-3.5 shadow-sm">
                 <div className="w-12 h-12 rounded-full bg-slate-100 flex items-center justify-center text-xl shrink-0 font-bold border border-slate-200">
                   TK
                 </div>
@@ -1081,7 +1081,7 @@ export const CustomerApp: React.FC<CustomerAppProps> = ({ screen, setScreen }) =
               </div>
 
               {/* Menu items links */}
-              <div className="bg-white rounded-2xl border border-gray-150 overflow-hidden divide-y divide-gray-100 shadow-sm text-xs font-bold text-gray-700">
+              <div className="bg-white rounded-2xl border border-gray-200 overflow-hidden divide-y divide-gray-100 shadow-sm text-xs font-bold text-gray-700">
                 <button onClick={() => setScreen('vehicles')} className="w-full flex justify-between items-center p-4 hover:bg-gray-50 transition-colors">
                   <span className="flex items-center gap-3"><Car className="w-4 h-4 text-gray-500" /> Manage Vehicles</span>
                   <ChevronRight className="w-4 h-4 text-gray-400" />
@@ -1097,7 +1097,7 @@ export const CustomerApp: React.FC<CustomerAppProps> = ({ screen, setScreen }) =
               </div>
 
               {/* Emergency Contacts Panel */}
-              <div className="bg-white p-4 rounded-2xl border border-gray-150 space-y-4 shadow-sm">
+              <div className="bg-white p-4 rounded-2xl border border-gray-200 space-y-4 shadow-sm">
                 <h3 className="text-xs font-black text-gray-500 uppercase tracking-wide">Emergency SOS Contacts</h3>
                 
                 <div className="space-y-2">
@@ -1214,7 +1214,7 @@ export const CustomerApp: React.FC<CustomerAppProps> = ({ screen, setScreen }) =
                   >
                     Select Services
                   </button>
-                  <a href={`tel:+919876543201`} className="px-3 border border-gray-250 rounded-xl flex items-center justify-center text-gray-700 hover:bg-gray-50"><Phone className="w-3.5 h-3.5" /></a>
+                  <a href={`tel:+919876543201`} className="px-3 border border-gray-300 rounded-xl flex items-center justify-center text-gray-700 hover:bg-gray-50"><Phone className="w-3.5 h-3.5" /></a>
                 </div>
               </div>
             )}

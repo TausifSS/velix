@@ -136,7 +136,7 @@ export const BusinessApp: React.FC<BusinessAppProps> = ({ setScreen }) => {
               >
                 <span className="text-[9px] text-slate-400 font-bold block uppercase">Active Mechanics</span>
                 <span className="text-lg font-black text-slate-900 mt-0.5 block">{currentStats.active}</span>
-                <span className="text-[9px] font-semibold text-slate-550 block mt-1 flex items-center gap-1">
+                <span className="text-[9px] font-semibold text-slate-500 block mt-1 flex items-center gap-1">
                   <span className="w-1.5 h-1.5 bg-emerald-500 rounded-full inline-block"></span> Online {currentStats.online}
                 </span>
               </div>

@@ -98,110 +98,27 @@ const AppContext = createContext<AppContextType | undefined>(undefined);
 export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   // 1. User State
   const [user, setUser] = useState<User>({
-    name: 'Tausif Khan',
-    phone: '+91 98765 43210',
-    email: 'tausif@velixapp.in',
-    walletBalance: 1250,
+    name: '',
+    phone: '',
+    email: '',
+    walletBalance: 0,
     velixPlus: {
-      active: true,
-      expiry: '12 May, 2027',
+      active: false,
     },
-    emergencyContacts: [
-      { name: 'Dad', phone: '+91 98111 22222' },
-      { name: 'Brother', phone: '+91 98333 44444' },
-    ],
+    emergencyContacts: [],
   });
 
   // 2. Vehicles State
-  const [vehicles, setVehicles] = useState<Vehicle[]>([
-    {
-      id: 1,
-      type: 'Car',
-      brand: 'Maruti Suzuki',
-      model: 'WagonR',
-      number: 'MH 12 AB 1234',
-      isDefault: true,
-      fuel: 'CNG',
-      color: 'White',
-    },
-    {
-      id: 2,
-      type: 'Bike',
-      brand: 'Royal Enfield',
-      model: 'Classic 350',
-      number: 'MH 14 XY 9876',
-      isDefault: false,
-      fuel: 'Petrol',
-      color: 'Black',
-    },
-  ]);
+  const [vehicles, setVehicles] = useState<Vehicle[]>([]);
 
   // 3. Bookings History
-  const [bookings, setBookings] = useState<Booking[]>([
-    {
-      id: '#VLX123456',
-      mechanicName: 'A1 Car Care',
-      service: 'Breakdown Assistance',
-      date: '12 May, 2026',
-      time: '10:30 AM',
-      price: '₹249',
-      status: 'completed',
-      vehicle: 'White WagonR (MH12 AB 1234)',
-      eta: '6 mins',
-      distance: '2.4 km',
-      otp: '4812',
-      visitCharge: '₹199',
-      serviceChargeEst: '₹300 - ₹800',
-      timeline: { requested: '10:24 AM', accepted: '10:25 AM', onWay: '10:28 AM', arrived: '10:35 AM', completed: '10:50 AM' },
-    },
-    {
-      id: '#VLX123457',
-      mechanicName: 'Speedy Rescue',
-      service: 'Towing',
-      date: '02 May, 2026',
-      time: '08:15 PM',
-      price: '₹699',
-      status: 'completed',
-      vehicle: 'Black Honda City (MH02 CD 5678)',
-      eta: '8 mins',
-      distance: '3.1 km',
-      otp: '9921',
-      visitCharge: '₹249',
-      serviceChargeEst: '₹1200 - ₹2500',
-      timeline: { requested: '08:10 PM', accepted: '08:12 PM', onWay: '08:15 PM', arrived: '08:22 PM', completed: '08:45 PM' },
-    },
-    {
-      id: '#VLX123459',
-      mechanicName: 'Auto Heroes',
-      service: 'Flat Tyre',
-      date: '10 Apr, 2026',
-      time: '02:20 PM',
-      price: '₹150',
-      status: 'cancelled',
-      vehicle: 'White WagonR (MH12 AB 1234)',
-      eta: '4 mins',
-      distance: '1.2 km',
-      otp: '3152',
-      visitCharge: '₹99',
-      serviceChargeEst: '₹150 - ₹300',
-      timeline: { requested: '02:18 PM' },
-    },
-  ]);
+  const [bookings, setBookings] = useState<Booking[]>([]);
 
   // 4. Current Active Booking
   const [currentBooking, setCurrentBooking] = useState<Booking | null>(null);
 
   // 5. Chat History
-  const [chatHistory, setChatHistory] = useState<ChatHistory>({
-    'A1 Car Care': [
-      { id: 1, text: 'Hello, I have accepted your request. I am packing my tools and heading your way.', sender: 'mechanic', time: '10:26 AM' },
-      { id: 2, text: 'Awesome, thanks! Please bring a CNG scanner if you have one.', sender: 'user', time: '10:27 AM' },
-      { id: 3, text: 'Sure, I will bring my diagnostic kit. Be there in 5-6 mins.', sender: 'mechanic', time: '10:27 AM' },
-    ],
-    'Speedy Rescue': [
-      { id: 1, text: 'Towing truck is dispatched.', sender: 'mechanic', time: '08:16 PM' },
-    ],
-  });
+  const [chatHistory, setChatHistory] = useState<ChatHistory>({});
 
   const [activeChatMechanic, setActiveChatMechanic] = useState<string | null>(null);
 
@@ -210,16 +127,8 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
 
   // 7. Role-Based States
   const [currentUserRole, setCurrentUserRole] = useState<'user' | 'mechanic' | 'business' | 'admin'>('user');
-  const [mechanicFleet, setMechanicFleet] = useState<any[]>([
-    { id: '1', name: 'A1 Car Care', rating: 4.8, reviews: 320, distance: '2.4 km', eta: '6 mins', visitCharge: '₹199', verified: true, services: ['Breakdown', 'Battery'], status: 'approved', kyc: { aadhaar: '3211 4556 9901', pan: 'BCKDP9921D', videoUrl: 'mock_video_1.mp4' }, phone: '+91 98765 43201', online: true },
-    { id: '2', name: 'Speedy Rescue', rating: 4.7, reviews: 210, distance: '3.1 km', eta: '8 mins', visitCharge: '₹199', verified: true, services: ['Towing', 'Breakdown'], status: 'approved', kyc: { aadhaar: '8812 4433 9921', pan: 'AALPK4431Z', videoUrl: 'mock_video_2.mp4' }, phone: '+91 98765 43202', online: true },
-    { id: '3', name: 'QuickFix Auto', rating: 4.6, reviews: 150, distance: '4.0 km', eta: '10 mins', visitCharge: '₹149', verified: false, services: ['Battery', 'Tyre'], status: 'pending', kyc: { aadhaar: '5561 2299 8812', pan: 'BZZPK9911X', videoUrl: 'mock_video_3.mp4' }, phone: '+91 98765 43203', online: false },
-    { id: '4', name: 'Auto Heroes', rating: 4.9, reviews: 412, distance: '1.2 km', eta: '4 mins', visitCharge: '₹249', verified: true, services: ['Breakdown', 'Towing', 'Fuel'], status: 'approved', kyc: { aadhaar: '9921 4411 2233', pan: 'CKKDP1209Y', videoUrl: 'mock_video_4.mp4' }, phone: '+91 98765 43204', online: true }
-  ]);
-  const [userReports, setUserReports] = useState<any[]>([
-    { id: 'R1', userName: 'Tausif Khan', bookingId: '#VLX123456', mechanicName: 'A1 Car Care', issue: 'Visit fee charged twice', status: 'pending', date: '14 May, 2026' },
-    { id: 'R2', userName: 'Rajesh Kumar', bookingId: '#VLX123459', mechanicName: 'Auto Heroes', issue: 'Mechanic did not show up', status: 'resolved', date: '11 May, 2026' }
-  ]);
+  const [mechanicFleet, setMechanicFleet] = useState<any[]>([]);
+  const [userReports, setUserReports] = useState<any[]>([]);
 
   // Simulation effect for active booking
   useEffect(() => {

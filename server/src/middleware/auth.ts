@@ -1,5 +1,5 @@
 import { Request, Response, NextFunction } from 'express';
-import admin from '../config/firebase.js';
+import admin, { isFirebaseAdminReady } from '../config/firebase.js';
 
 export interface AuthenticatedRequest extends Request {
   user?: {
@@ -19,6 +19,12 @@ export const verifyFirebaseToken = async (
   }
 
   const token = authHeader.split('Bearer ')[1];
+
+  if (!isFirebaseAdminReady) {
+    return res.status(503).json({
+      error: 'Firebase Admin is not configured. Set FIREBASE_SERVICE_ACCOUNT.',
+    });
+  }
 
   try {
     const decodedToken = await admin.auth().verifyIdToken(token);
