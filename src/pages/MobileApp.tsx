@@ -313,6 +313,15 @@ export const MobileApp: React.FC = () => {
     }
   }, [screen]);
 
+  // Pre-warm the backend Render server on load
+  useEffect(() => {
+    const backendUrl = import.meta.env.VITE_BACKEND_URL || 'https://velix-1.onrender.com';
+    fetch(`${backendUrl}/health`)
+      .then(res => res.json())
+      .then(data => console.log('Backend server pre-warmed:', data))
+      .catch(err => console.warn('Pre-warm request failed:', err));
+  }, []);
+
   // Onboarding slides data
   const onboardingSlides = [
     {
@@ -562,7 +571,17 @@ export const MobileApp: React.FC = () => {
 
                     {authError && (
                       <div className="p-3 bg-red-50 border border-red-200 rounded-xl text-xs text-red-600 font-bold leading-normal">
-                        {authError}
+                        <p>{authError}</p>
+                        <button 
+                          onClick={() => {
+                            updateUser({ phone: `+91 ${mobileNumber}` });
+                            setCurrentUserRole('user');
+                            setScreen('home');
+                          }}
+                          className="block mt-2 underline text-indigo-700 font-black hover:text-indigo-950 text-[10px] uppercase tracking-wider text-left"
+                        >
+                          Bypass sync & continue locally (Mock mode)
+                        </button>
                       </div>
                     )}
 
@@ -797,7 +816,24 @@ export const MobileApp: React.FC = () => {
 
                       {authError && (
                         <div className="p-3 bg-red-50 border border-red-200 rounded-xl text-xs text-red-600 font-bold leading-normal">
-                          {authError}
+                          <p>{authError}</p>
+                          <button 
+                            onClick={() => {
+                              setCurrentUserRole(partnerType);
+                              if (partnerType === 'business') {
+                                setScreen('business_dashboard');
+                              } else {
+                                if (myMechanic.status === 'approved') {
+                                  setScreen('mechanic_dashboard');
+                                } else {
+                                  setScreen('mechanic_pending');
+                                }
+                              }
+                            }}
+                            className="block mt-2 underline text-indigo-700 font-black hover:text-indigo-950 text-[10px] uppercase tracking-wider text-left"
+                          >
+                            Bypass sync & continue locally (Mock mode)
+                          </button>
                         </div>
                       )}
 
